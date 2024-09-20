@@ -1,0 +1,35 @@
+name: language
+description: "A new Flutter project."
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  firebase_auth: ^5.3.0
+  firebase_core: ^3.5.0
+  cloud_firestore: ^5.4.2
+  google_sign_in: ^6.2.1
+  flutter_spinkit: ^5.2.1
+  fluttertoast: ^8.2.8
+  provider: ^6.1.2
+  uuid: ^4.5.0
+  translator: ^1.0.0
+  audio_waveforms: ^1.0.5
+  permission_handler: ^11.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
