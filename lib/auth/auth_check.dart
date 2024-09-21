@@ -33,7 +33,7 @@ class AuthCheck extends StatelessWidget {
               if (userProvider.isLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (userProvider.role != null) {
-                return const Homepage();
+                return Homepage();
               } else {
                 return const RoleSelectionPage();
               }

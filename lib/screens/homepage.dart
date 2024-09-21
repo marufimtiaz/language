@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:language/auth/auth_service.dart';
 import 'package:language/components/class_card.dart';
 import 'package:language/components/join_class.dart';
+import 'package:language/screens/login_page.dart';
 import 'package:language/screens/translator_page.dart';
 import 'package:provider/provider.dart';
 import '../auth/user_provider.dart'; // Your UserProvider class
@@ -98,9 +99,16 @@ class BaseHomepage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => TranslatorPage()),
                 );
               }),
-          const IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: signOutUser,
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              signOutUser();
+              // Redirect to login page
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+              );
+            },
           ),
         ],
       ),
@@ -153,6 +161,8 @@ class BaseHomepage extends StatelessWidget {
     );
   }
 }
+
+
 
 // String _formatDate(Timestamp? timestamp) {
 //   if (timestamp == null) return 'N/A';

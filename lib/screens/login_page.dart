@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../components/my_button.dart';
 import '../components/textfield.dart';
+import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -170,7 +171,10 @@ class _LoginPageState extends State<LoginPage> {
                       const Text("Dont have an account? "),
                       GestureDetector(
                         onTap: () {
-                          Navigator.pushNamed(context, '/signuppage');
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const SignupPage()));
                         },
                         child: Text(
                           "Sign Up",

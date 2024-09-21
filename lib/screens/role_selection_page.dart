@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:language/screens/homepage.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
 import '../auth/user_provider.dart';
 import '../components/selectors.dart';
+import 'login_page.dart';
 
 class RoleSelectionPage extends StatefulWidget {
   const RoleSelectionPage({super.key});
@@ -40,7 +42,10 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
               Provider.of<UserProvider>(context, listen: false);
           userProvider.updateUserRole(_selectedRole!);
 
-          Navigator.pushReplacementNamed(context, '/homepage');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Homepage()),
+          );
         } catch (e) {
           Fluttertoast.showToast(msg: "Error updating role: $e");
         }
@@ -64,6 +69,10 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
             onPressed: () async {
               await signOutUser(); // Call sign-out function
               // Redirect to login page
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+              );
             },
           ),
         ],

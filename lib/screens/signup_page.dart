@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../components/my_button.dart';
 import '../components/textfield.dart';
+import 'role_selection_page.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -48,7 +49,10 @@ class _SignupPageState extends State<SignupPage> {
             _errorMessage = 'Signup failed. Please try again.';
           });
         } else {
-          Navigator.pop(context);
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) {
+            return const RoleSelectionPage();
+          }));
         }
         // Successful signup is handled by AuthCheck
       } catch (e) {
