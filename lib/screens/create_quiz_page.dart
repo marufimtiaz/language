@@ -88,30 +88,40 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Create Quiz')),
-      body: ListView(
-        children: [
-          ...questionKeys.asMap().entries.map((entry) {
-            int idx = entry.key;
-            GlobalKey<_QuestionCardState> key = entry.value;
-            return Dismissible(
-              key: Key('question_$idx'),
-              onDismissed: (_) => removeQuestionCard(idx),
-              child: QuestionCard(key: key),
-            );
-          }).toList(),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: addQuestionCard,
-            child: const Text('Add Question'),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Create Quiz')),
+        body: ListView(
+          children: [
+            ...questionKeys.asMap().entries.map((entry) {
+              int idx = entry.key;
+              GlobalKey<_QuestionCardState> key = entry.value;
+              return Dismissible(
+                key: Key('question_$idx'),
+                onDismissed: (_) => removeQuestionCard(idx),
+                child: QuestionCard(key: key),
+              );
+            }).toList(),
+            const SizedBox(height: 20),
+          ],
+        ),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              FloatingActionButton.extended(
+                  onPressed: addQuestionCard,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add')),
+              FloatingActionButton.extended(
+                  onPressed: saveQuiz,
+                  icon: const Icon(Icons.save_outlined),
+                  label: const Text('Save')),
+            ],
           ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: saveQuiz,
-            child: const Text('Save Quiz'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -147,38 +157,42 @@ class _QuestionCardState extends State<QuestionCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextFormField(
-              controller: questionController,
-              decoration: const InputDecoration(labelText: 'Question'),
-            ),
-            ...List.generate(4, (index) {
-              return Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: optionControllers[index],
-                      decoration:
-                          InputDecoration(labelText: 'Option ${index + 1}'),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text('Question no. 1'),
+              TextFormField(
+                controller: questionController,
+                decoration: const InputDecoration(labelText: 'Question'),
+              ),
+              ...List.generate(4, (index) {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: optionControllers[index],
+                        decoration:
+                            InputDecoration(labelText: 'Option ${index + 1}'),
+                      ),
                     ),
-                  ),
-                  Radio<int>(
-                    value: index,
-                    groupValue: correctAnswerIndex,
-                    onChanged: (int? value) {
-                      setState(() {
-                        correctAnswerIndex = value;
-                      });
-                    },
-                  ),
-                ],
-              );
-            }),
-          ],
+                    Radio<int>(
+                      value: index,
+                      groupValue: correctAnswerIndex,
+                      onChanged: (int? value) {
+                        setState(() {
+                          correctAnswerIndex = value;
+                        });
+                      },
+                    ),
+                  ],
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );

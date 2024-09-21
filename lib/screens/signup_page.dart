@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../auth/auth_check.dart';
 import '../auth/auth_service.dart';
 import '../components/my_button.dart';
 import '../components/textfield.dart';
@@ -42,6 +43,7 @@ class _SignupPageState extends State<SignupPage> {
           _nameController.text.trim(),
           _emailController.text.trim(),
           _passwordController.text.trim(),
+          context,
         );
 
         if (result != 'success') {
@@ -49,10 +51,12 @@ class _SignupPageState extends State<SignupPage> {
             _errorMessage = 'Signup failed. Please try again.';
           });
         } else {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (context) {
-            return const RoleSelectionPage();
-          }));
+          print("Login successful in LoginPage");
+          // Force a rebuild of the widget tree
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AuthCheck()),
+          );
         }
         // Successful signup is handled by AuthCheck
       } catch (e) {
@@ -74,15 +78,21 @@ class _SignupPageState extends State<SignupPage> {
     });
 
     try {
-      String? result = await signInWithGoogle();
+      String? result = await signInWithGoogle(context);
 
       if (result != 'success') {
         setState(() {
           _errorMessage = 'Google Sign-In failed. Please try again.';
         });
       } else {
-        Navigator.pop(context);
+        print("Login successful in LoginPage");
+        // Force a rebuild of the widget tree
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthCheck()),
+        );
       }
+
       // Successful sign-in is handled by AuthCheck
     } catch (e) {
       setState(() {

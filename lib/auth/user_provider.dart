@@ -17,23 +17,30 @@ class UserProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   Future<void> setUser(User? user) async {
+    print("setUser called with user: ${user?.uid}");
     if (_user?.uid != user?.uid) {
       _user = user;
       _isLoading = true;
       notifyListeners();
+      print("Notified listeners after setting _isLoading to true");
       if (user != null) {
         await _fetchUserData();
       } else {
         _role = null;
         _name = null;
         _email = null;
+        print("User is null, cleared user data");
       }
       _isLoading = false;
       notifyListeners();
+      print("Notified listeners after setting _isLoading to false");
+    } else {
+      print("User ID unchanged, not updating");
     }
   }
 
   Future<void> _fetchUserData() async {
+    print("_fetchUserData called");
     if (_user != null) {
       try {
         DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -46,12 +53,13 @@ class UserProvider extends ChangeNotifier {
           _role = userData['role'] as String?;
           _name = userData['name'] as String?;
           _email = userData['email'] as String?;
+          print(
+              "Fetched user data - Role: $_role, Name: $_name, Email: $_email");
         } else {
           print('User document does not exist for UID: ${_user!.uid}');
         }
       } catch (e) {
         print('Error fetching user data: $e');
-        // Consider how you want to handle this error - maybe set default values or show an error to the user
       }
     }
   }

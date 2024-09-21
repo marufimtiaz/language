@@ -7,6 +7,7 @@ import 'package:language/components/join_class.dart';
 import 'package:language/screens/login_page.dart';
 import 'package:language/screens/translator_page.dart';
 import 'package:provider/provider.dart';
+import '../auth/auth_check.dart';
 import '../auth/user_provider.dart'; // Your UserProvider class
 import '../services/class_service.dart';
 import '../components/create_class.dart';
@@ -22,51 +23,29 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    String? role = userProvider.role;
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        String? role = userProvider.role;
 
-    return role == "Teacher"
-        ? const TeacherHomepage()
-        : const StudentHomepage();
-  }
-}
-
-class TeacherHomepage extends StatelessWidget {
-  const TeacherHomepage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return BaseHomepage(
-      title: "Teacher Homepage",
-      fabBuilder: (context) => FloatingActionButton.extended(
-        onPressed: () => showDialog(
-          context: context,
-          builder: (BuildContext context) => const CreateClassDialog(),
-        ),
-        label: const Text('Add Class'),
-        icon: const Icon(Icons.add),
-      ),
-      classesStream: (userId) => ClassService().getTeacherClasses(userId),
-    );
-  }
-}
-
-class StudentHomepage extends StatelessWidget {
-  const StudentHomepage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return BaseHomepage(
-      title: "Student Homepage",
-      fabBuilder: (context) => FloatingActionButton.extended(
-        onPressed: () => showDialog(
-          context: context,
-          builder: (BuildContext context) => const JoinClassDialog(),
-        ),
-        label: const Text('Join Class'),
-        icon: const Icon(Icons.add),
-      ),
-      classesStream: (userId) => ClassService().getStudentClasses(userId),
+        return BaseHomepage(
+          title: role == 'Teacher' ? "Teacher Homepage" : "Student Homepage",
+          fabBuilder: (context) => FloatingActionButton.extended(
+            onPressed: () => showDialog(
+              context: context,
+              builder: (BuildContext context) => role == 'Teacher'
+                  ? const CreateClassDialog()
+                  : const JoinClassDialog(),
+            ),
+            label: role == 'Teacher'
+                ? const Text('Add Class')
+                : const Text('Join Class'),
+            icon: const Icon(Icons.add),
+          ),
+          classesStream: (userId) => role == 'Teacher'
+              ? ClassService().getTeacherClasses(userId)
+              : ClassService().getStudentClasses(userId),
+        );
+      },
     );
   }
 }
@@ -102,11 +81,11 @@ class BaseHomepage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              signOutUser();
+              signOutUser(context);
               // Redirect to login page
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
+                MaterialPageRoute(builder: (context) => const AuthCheck()),
               );
             },
           ),
@@ -161,11 +140,3 @@ class BaseHomepage extends StatelessWidget {
     );
   }
 }
-
-
-
-// String _formatDate(Timestamp? timestamp) {
-//   if (timestamp == null) return 'N/A';
-//   DateTime dateTime = timestamp.toDate();
-//   return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
-// }

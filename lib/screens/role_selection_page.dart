@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:language/screens/homepage.dart';
 import 'package:provider/provider.dart';
+import '../auth/auth_check.dart';
 import '../auth/auth_service.dart';
 import '../auth/user_provider.dart';
 import '../components/selectors.dart';
@@ -65,16 +66,15 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
         title: const Text("Select Your Role"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await signOutUser(); // Call sign-out function
-              // Redirect to login page
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await signOutUser(context); // Call sign-out function
+                // Redirect to login page
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AuthCheck()),
+                );
+              }),
         ],
       ),
       body: Padding(

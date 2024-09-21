@@ -11,39 +11,46 @@ class AuthCheck extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("AuthCheck build method called");
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-
+        print("StreamBuilder rebuild - Auth state changed");
         if (snapshot.connectionState == ConnectionState.active) {
           User? user = snapshot.data;
-
-          // Update the UserProvider
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            userProvider.setUser(user);
-          });
-
           if (user == null) {
+            print("User is null, returning LoginPage");
             return const LoginPage();
           }
-
-          return Consumer<UserProvider>(
-            builder: (context, userProvider, _) {
-              if (userProvider.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (userProvider.role != null) {
-                return Homepage();
-              } else {
-                return const RoleSelectionPage();
-              }
+          return FutureBuilder(
+            future: _updateUserProvider(context, user),
+            builder: (context, _) {
+              return Consumer<UserProvider>(
+                builder: (context, userProvider, _) {
+                  print(
+                      "Consumer rebuild - UserProvider: ${userProvider.user?.uid}, Role: ${userProvider.role}");
+                  if (userProvider.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (userProvider.role == null) {
+                    print("User role is null, returning RoleSelectionPage");
+                    return const RoleSelectionPage();
+                  } else {
+                    print("User role is set, returning Homepage");
+                    return const Homepage();
+                  }
+                },
+              );
             },
           );
         }
-
-        // Show loading indicator while the stream is not yet ready
         return const Center(child: CircularProgressIndicator());
       },
     );
+  }
+
+  Future<void> _updateUserProvider(BuildContext context, User? user) async {
+    print("_updateUserProvider called with user: ${user?.uid}");
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    await userProvider.setUser(user);
   }
 }

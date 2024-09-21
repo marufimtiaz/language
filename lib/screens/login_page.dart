@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../auth/auth_check.dart';
 import '../auth/auth_service.dart';
 import '../components/my_button.dart';
 import '../components/textfield.dart';
@@ -36,12 +37,20 @@ class _LoginPageState extends State<LoginPage> {
         String? result = await loginUserWithEmail(
           _emailController.text,
           _passwordController.text,
+          context,
         );
 
         if (result != 'success') {
           setState(() {
             _errorMessage = 'Login failed. Please try again.';
           });
+        } else {
+          print("Login successful in LoginPage");
+          // Force a rebuild of the widget tree
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AuthCheck()),
+          );
         }
         // Successful login is handled by AuthCheck
       } catch (e) {
@@ -63,12 +72,19 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      String? result = await signInWithGoogle();
+      String? result = await signInWithGoogle(context);
 
       if (result != 'success') {
         setState(() {
           _errorMessage = 'Google Sign-In failed. Please try again.';
         });
+      } else {
+        print("Login successful in LoginPage");
+        // Force a rebuild of the widget tree
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthCheck()),
+        );
       }
       // Successful sign-in is handled by AuthCheck
     } catch (e) {
