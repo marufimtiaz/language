@@ -5,6 +5,7 @@ import '../auth/user_provider.dart';
 import '../components/notice_card.dart';
 import '../services/class_service.dart';
 import '../services/quiz_service.dart'; // Import QuizService
+import '../utils/audio_provider.dart';
 import 'create_quiz_page.dart';
 import 'quiz_submission_page.dart';
 import 'student_list_page.dart';
@@ -188,7 +189,9 @@ class ClassNoticePage extends StatelessWidget {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => const AudioRecordingPage()));
+                        builder: (context) => ChangeNotifierProvider(
+                            create: (context) => AudioProvider(),
+                            child: const AudioRecordingPage())));
                   },
                   child: const Text('Pronunciation Challenge'),
                 ),

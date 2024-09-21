@@ -1,42 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../utils/audio_provider.dart';
 
-class AudioRecordingPage extends StatefulWidget {
-  const AudioRecordingPage({super.key});
-
-  @override
-  _AudioRecordingPageState createState() => _AudioRecordingPageState();
-}
-
-class _AudioRecordingPageState extends State<AudioRecordingPage> {
-  late final RecorderController recorderController;
-  late final PlayerController playerController;
-  bool isRecording = false;
-  bool isRecordingCompleted = false;
-  String recordingDuration = '00:00';
-
-  Future<void> _checkPermissions() async {
-    var status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      await Permission.microphone.request();
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _checkPermissions();
-    recorderController = RecorderController()
-      ..androidEncoder = AndroidEncoder.aac
-      ..androidOutputFormat = AndroidOutputFormat.mpeg4
-      ..iosEncoder = IosEncoder.kAudioFormatMPEG4AAC
-      ..sampleRate = 44100;
-    playerController = PlayerController();
-  }
+class AudioRecordingPage extends StatelessWidget {
+  const AudioRecordingPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final audioProvider = Provider.of<AudioProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Audio Recorder'),
@@ -46,25 +19,32 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
           const Card(
             child: Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text(
-                  'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'),
+              child: Text('Tap the microphone to start recording.'),
             ),
           ),
           const Spacer(),
-          if (!isRecording && !isRecordingCompleted)
+          if (!audioProvider.isRecording && !audioProvider.isRecordingCompleted)
             TextButton(
               onPressed: () async {
-                await recorderController.record();
-                setState(() {
-                  isRecording = true;
-                });
+                try {
+                  await audioProvider.startRecording();
+                } catch (e) {
+                  String errorMessage = 'Failed to start recording';
+                  if (e.toString().contains('Permissions not granted')) {
+                    errorMessage =
+                        'Microphone permission is required to record audio';
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(errorMessage)),
+                  );
+                }
               },
               child: const Icon(Icons.mic, size: 50),
             ),
-          if (isRecording)
+          if (audioProvider.isRecording)
             AudioWaveforms(
-              size: Size(MediaQuery.of(context).size.width, 500),
-              recorderController: recorderController,
+              size: Size(MediaQuery.of(context).size.width, 200),
+              recorderController: audioProvider.recorderController,
               enableGesture: true,
               waveStyle: const WaveStyle(
                 waveColor: Colors.black,
@@ -75,66 +55,60 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
               padding: const EdgeInsets.only(left: 18),
               margin: const EdgeInsets.symmetric(horizontal: 15),
             ),
-          if (isRecording)
+          if (audioProvider.isRecording)
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
-              child: Text('Recording voice $recordingDuration'),
+              child: Text('Recording... ${audioProvider.recordingDuration}'),
             ),
-          if (isRecording)
+          if (audioProvider.isRecording)
             ElevatedButton(
               onPressed: () async {
-                await recorderController.stop();
-                setState(() {
-                  isRecording = false;
-                  isRecordingCompleted = true;
-                });
+                try {
+                  await audioProvider.stopRecording();
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to stop recording: $e')),
+                  );
+                }
               },
-              child: const Text('Stop'),
+              child: const Text('Stop Recording'),
             ),
-          if (isRecordingCompleted)
+          if (audioProvider.isRecordingCompleted && !audioProvider.isPlaying)
             Padding(
               padding: const EdgeInsets.only(top: 16.0),
-              child: Text('Total Length $recordingDuration'),
+              child:
+                  Text('Recording length: ${audioProvider.recordingDuration}'),
             ),
-          if (isRecordingCompleted)
-            AudioWaveforms(
-              size: Size(MediaQuery.of(context).size.width, 100),
-              recorderController: recorderController,
-              enableGesture: true,
-              waveStyle: const WaveStyle(
-                waveColor: Colors.black,
-                extendWaveform: true,
-                showMiddleLine: false,
-                scaleFactor: 50.0,
-              ),
-              padding: const EdgeInsets.only(left: 18),
-              margin: const EdgeInsets.symmetric(horizontal: 15),
-            ),
-          if (isRecordingCompleted)
-            IconButton(
-              onPressed: () {
-                // Play functionality
-              },
-              icon: const Icon(Icons.play_circle),
-            ),
-          if (isRecordingCompleted)
+          if (audioProvider.isRecordingCompleted)
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    // Upload functionality
+                IconButton(
+                  onPressed: () async {
+                    try {
+                      if (audioProvider.isPlaying) {
+                        await audioProvider.stopPlayback();
+                      } else {
+                        await audioProvider.playRecording();
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Failed to play/stop recording: $e')),
+                      );
+                    }
                   },
-                  child: const Text('Upload'),
+                  icon: Icon(
+                      audioProvider.isPlaying ? Icons.stop : Icons.play_arrow),
+                  iconSize: 50,
                 ),
                 const SizedBox(width: 16.0),
                 IconButton(
                   onPressed: () {
-                    setState(() {
-                      isRecordingCompleted = false;
-                    });
+                    audioProvider.resetRecording();
                   },
                   icon: const Icon(Icons.refresh),
+                  iconSize: 50,
                 ),
               ],
             ),
