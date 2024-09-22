@@ -3,7 +3,6 @@ import '../auth/auth_check.dart';
 import '../auth/auth_service.dart';
 import '../components/my_button.dart';
 import '../components/textfield.dart';
-import 'role_selection_page.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -71,7 +70,7 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
-  Future<void> _signInWithGoogle() async {
+  Future<void> _handleGoogleSignIn() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -80,28 +79,33 @@ class _SignupPageState extends State<SignupPage> {
     try {
       String? result = await signInWithGoogle(context);
 
-      if (result != 'success') {
-        setState(() {
-          _errorMessage = 'Google Sign-In failed. Please try again.';
-        });
-      } else {
-        print("Login successful in LoginPage");
-        // Force a rebuild of the widget tree
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AuthCheck()),
-        );
-      }
+      if (!mounted) return; // Check if widget is still mounted
 
-      // Successful sign-in is handled by AuthCheck
+      if (mounted) {
+        if (result != 'success') {
+          setState(() {
+            _errorMessage = 'Google Sign-In failed. Please try again.';
+          });
+        } else {
+          print("Login successful in LoginPage");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AuthCheck()),
+          );
+        }
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'An error occurred. Please try again later.';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'An error occurred. Please try again later.';
+        });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -231,7 +235,7 @@ class _SignupPageState extends State<SignupPage> {
                       borderColor: Colors.grey,
                       onPressed:
                           // Handle Google sign in button press
-                          _signInWithGoogle,
+                          _handleGoogleSignIn,
                     ),
                     SizedBox(height: screenHeight * 0.02),
                     CustomButton(

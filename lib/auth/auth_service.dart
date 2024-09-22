@@ -101,10 +101,16 @@ Future<String?> signInWithGoogle(BuildContext context) async {
     }
 
     // Update UserProvider
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    await userProvider.setUser(userCredential.user);
+    // Wrap this in a try-catch block to handle potential errors
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.setUser(userCredential.user);
+      print("Google Sign-In successful, UserProvider updated");
+    } catch (e) {
+      print("Failed to update UserProvider: $e");
+      // The widget might have been disposed, but the sign-in was successful
+    }
 
-    print("Google Sign-In successful, UserProvider updated");
     return 'success';
   } catch (e) {
     print("Google Sign-In failed: $e");

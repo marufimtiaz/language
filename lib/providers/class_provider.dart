@@ -12,7 +12,7 @@ class ClassProvider with ChangeNotifier {
 
   Future<void> fetchClasses(String userId, String role) async {
     _isLoading = true;
-    notifyListeners();
+    // notifyListeners();
 
     try {
       Stream<QuerySnapshot> classStream = role == 'Teacher'

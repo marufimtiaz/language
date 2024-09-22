@@ -1,17 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:language/auth/auth_service.dart';
-import 'package:language/components/class_card.dart';
-import 'package:language/components/join_class.dart';
-import 'package:language/screens/login_page.dart';
-import 'package:language/screens/translator_page.dart';
 import 'package:provider/provider.dart';
-import '../auth/auth_check.dart';
-import '../auth/user_provider.dart'; // Your UserProvider class
-import '../services/class_service.dart';
+import '../providers/user_provider.dart';
+import '../providers/class_provider.dart';
+import '../components/class_card.dart';
 import '../components/create_class.dart';
-import 'class_notification_page.dart'; // Import auth service for sign out
+import '../components/join_class.dart';
+import 'class_notification_page.dart';
+import 'translator_page.dart';
+import '../auth/auth_check.dart';
+import '../auth/auth_service.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -22,67 +19,49 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   @override
-  Widget build(BuildContext context) {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
-        String? role = userProvider.role;
-
-        return BaseHomepage(
-          title: role == 'Teacher' ? "Teacher Homepage" : "Student Homepage",
-          fabBuilder: (context) => FloatingActionButton.extended(
-            onPressed: () => showDialog(
-              context: context,
-              builder: (BuildContext context) => role == 'Teacher'
-                  ? const CreateClassDialog()
-                  : const JoinClassDialog(),
-            ),
-            label: role == 'Teacher'
-                ? const Text('Add Class')
-                : const Text('Join Class'),
-            icon: const Icon(Icons.add),
-          ),
-          classesStream: (userId) => role == 'Teacher'
-              ? ClassService().getTeacherClasses(userId)
-              : ClassService().getStudentClasses(userId),
-        );
-      },
-    );
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final classProvider = Provider.of<ClassProvider>(context, listen: false);
+      if (!classProvider.isLoading && classProvider.classes.isEmpty) {
+        classProvider.fetchClasses(userProvider.userId!, userProvider.role!);
+      }
+    });
   }
-}
-
-class BaseHomepage extends StatelessWidget {
-  final String title;
-  final Widget Function(BuildContext) fabBuilder;
-  final Stream<QuerySnapshot> Function(String?) classesStream;
-
-  const BaseHomepage({
-    super.key,
-    required this.title,
-    required this.fabBuilder,
-    required this.classesStream,
-  });
 
   @override
   Widget build(BuildContext context) {
-    var user = FirebaseAuth.instance.currentUser;
+    final userProvider = Provider.of<UserProvider>(context);
+    final classProvider = Provider.of<ClassProvider>(context);
+    String? role = userProvider.role;
+
+    if (userProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (!classProvider.isLoading && classProvider.classes.isEmpty) {
+      classProvider.fetchClasses(userProvider.userId!, userProvider.role!);
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title:
+            Text(role == 'Teacher' ? "Teacher Homepage" : "Student Homepage"),
         actions: [
           IconButton(
-              icon: const Icon(Icons.translate_outlined),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => TranslatorPage()),
-                );
-              }),
+            icon: const Icon(Icons.translate_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TranslatorPage()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
               signOutUser(context);
-              // Redirect to login page
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const AuthCheck()),
@@ -91,52 +70,47 @@ class BaseHomepage extends StatelessWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: classesStream(user?.uid),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                      child: Text("Error fetching classes: ${snapshot.error}"));
-                }
-                if (snapshot.data == null || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No classes available."));
-                }
-                return ListView.separated(
+      body: classProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : classProvider.classes.isEmpty
+              ? const Center(child: Text("No classes available."))
+              : ListView.separated(
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 0),
-                  itemCount: snapshot.data!.docs.length,
+                  itemCount: classProvider.classes.length,
                   itemBuilder: (context, index) {
-                    var doc = snapshot.data!.docs[index];
+                    var classData = classProvider.classes[index];
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: ClassCard(
-                        titleText: doc['name'],
+                        titleText: classData['name'],
                         leftSubText:
-                            "${(doc['studentIds'] as List).length} Students",
+                            "${(classData['studentIds'] as List).length} Students",
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) =>
-                                    ClassNoticePage(classId: doc.id)),
+                              builder: (context) => ClassNoticePage(
+                                  classId: classData['classId']),
+                            ),
                           );
                         },
                       ),
                     );
                   },
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showDialog(
+          context: context,
+          builder: (BuildContext context) => role == 'Teacher'
+              ? const CreateClassDialog()
+              : const JoinClassDialog(),
+        ),
+        label: role == 'Teacher'
+            ? const Text('Add Class')
+            : const Text('Join Class'),
+        icon: const Icon(Icons.add),
       ),
-      floatingActionButton: fabBuilder(context),
     );
   }
 }

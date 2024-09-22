@@ -21,8 +21,8 @@ class UserProvider extends ChangeNotifier {
     if (_user?.uid != user?.uid) {
       _user = user;
       _isLoading = true;
-      notifyListeners();
-      print("Notified listeners after setting _isLoading to true");
+      // notifyListeners();
+      // print("Notified listeners after setting _isLoading to true");
       if (user != null) {
         await _fetchUserData();
       } else {

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../utils/audio_provider.dart';
 
 class AudioRecordingPage extends StatelessWidget {
-  const AudioRecordingPage({Key? key}) : super(key: key);
+  const AudioRecordingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
