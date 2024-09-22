@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:language/auth/auth_check.dart';
 import 'package:language/firebase_options.dart';
-import 'package:language/auth/user_provider.dart';
+import 'package:language/providers/user_provider.dart';
 import 'package:language/providers/class_provider.dart';
 import 'package:language/providers/quiz_provider.dart';
 import 'package:language/theme/light_theme.dart';

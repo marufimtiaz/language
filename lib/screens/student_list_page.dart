@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../auth/user_provider.dart';
+import '../providers/user_provider.dart';
 import '../services/class_service.dart';
 
 class StudentListPage extends StatelessWidget {

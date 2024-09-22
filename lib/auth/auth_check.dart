@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:language/auth/user_provider.dart';
+import 'package:language/providers/user_provider.dart';
 import 'package:language/screens/role_selection_page.dart';
 import 'package:language/screens/homepage.dart';
 import 'package:language/screens/login_page.dart';

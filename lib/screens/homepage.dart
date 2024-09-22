@@ -54,7 +54,7 @@ class _HomepageState extends State<Homepage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const TranslatorPage()),
+                MaterialPageRoute(builder: (context) => TranslatorPage()),
               );
             },
           ),

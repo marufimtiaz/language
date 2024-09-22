@@ -4,7 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:language/auth/user_provider.dart';
+import 'package:language/providers/user_provider.dart';
 
 // Login user with email and password
 Future<String?> loginUserWithEmail(

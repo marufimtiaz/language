@@ -6,9 +6,8 @@ import 'package:language/screens/homepage.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_check.dart';
 import '../auth/auth_service.dart';
-import '../auth/user_provider.dart';
+import '../providers/user_provider.dart';
 import '../components/selectors.dart';
-import 'login_page.dart';
 
 class RoleSelectionPage extends StatefulWidget {
   const RoleSelectionPage({super.key});

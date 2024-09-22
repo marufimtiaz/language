@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:language/screens/audio_record_page.dart';
 import 'package:provider/provider.dart';
-import '../auth/user_provider.dart';
+import '../providers/user_provider.dart';
 import '../components/notice_card.dart';
 import '../services/class_service.dart';
 import '../services/quiz_service.dart'; // Import QuizService
