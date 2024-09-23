@@ -27,7 +27,8 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-
+      final classProvider = Provider.of<ClassProvider>(context, listen: false);
+      classProvider.getStudentList(classId: widget.classId);
       quizProvider.fetchQuizzes(widget.classId);
     });
   }

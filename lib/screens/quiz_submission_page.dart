@@ -18,7 +18,9 @@ class QuizSubmissionPage extends StatefulWidget {
 
 class QuizSubmissionPageState extends State<QuizSubmissionPage> {
   List<int?> selectedAnswers = [];
+  List<Icon> scoreKeeper = [];
   bool isLoading = true;
+  int currentQuestionIndex = 0;
 
   @override
   void initState() {
@@ -48,21 +50,33 @@ class QuizSubmissionPageState extends State<QuizSubmissionPage> {
     }
   }
 
-  void _selectAnswer(int questionIndex, int answerIndex) {
+  void _selectAnswer(int answerIndex) {
+    final quizData =
+        Provider.of<QuizProvider>(context, listen: false).currentQuizDetails;
+    final questions = quizData!['questions'] as List<dynamic>;
+    final currentQuestion = questions[currentQuestionIndex];
+    final correctAnswerIndex = currentQuestion['correctAnswer'];
+
     setState(() {
-      selectedAnswers[questionIndex] = answerIndex;
+      selectedAnswers[currentQuestionIndex] = answerIndex;
+
+      // Add feedback icon
+      if (answerIndex == correctAnswerIndex) {
+        scoreKeeper.add(Icon(Icons.check, color: Colors.green));
+      } else {
+        scoreKeeper.add(Icon(Icons.close, color: Colors.red));
+      }
+
+      // Move to next question or finish quiz
+      if (currentQuestionIndex < selectedAnswers.length - 1) {
+        currentQuestionIndex++;
+      } else {
+        _submitQuiz();
+      }
     });
   }
 
   Future<void> _submitQuiz() async {
-    if (selectedAnswers.contains(null)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please answer all questions before submitting.')),
-      );
-      return;
-    }
-
     List<Map<String, dynamic>> answers = [];
     for (int i = 0; i < selectedAnswers.length; i++) {
       answers.add({
@@ -74,7 +88,32 @@ class QuizSubmissionPageState extends State<QuizSubmissionPage> {
     await Provider.of<QuizProvider>(context, listen: false)
         .submitQuiz(widget.quizId, widget.studentId, answers);
 
-    Navigator.of(context).pop(); // Return to previous page after submission
+    _showResult();
+  }
+
+  void _showResult() {
+    int correctAnswers =
+        scoreKeeper.where((icon) => icon.color == Colors.green).length;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Quiz Completed'),
+          content: Text(
+              'You got $correctAnswers out of ${selectedAnswers.length} correct!'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context)
+                    .pop(); // Return to previous page after viewing results
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -98,53 +137,66 @@ class QuizSubmissionPageState extends State<QuizSubmissionPage> {
           );
         }
 
+        final questions = quizData['questions'] as List<dynamic>;
+        final currentQuestion = questions[currentQuestionIndex];
+
         return Scaffold(
-          appBar: AppBar(title: Text(quizData['title'] ?? 'Quiz')),
-          body: ListView(
+          appBar: AppBar(
+            title: Text(quizData['title'] ?? 'Quiz'),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            centerTitle: true,
+          ),
+          body: Padding(
             padding: const EdgeInsets.all(16.0),
-            children: [
-              ...(quizData['questions'] as List<dynamic>)
-                  .asMap()
-                  .entries
-                  .map((entry) {
-                int index = entry.key;
-                Map<String, dynamic> question = entry.value;
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Question ${index + 1}: ${question['question']}',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        ...(question['options'] as List<dynamic>)
-                            .asMap()
-                            .entries
-                            .map((option) {
-                          int optionIndex = option.key;
-                          String optionText = option.value;
-                          return RadioListTile<int>(
-                            title: Text(optionText),
-                            value: optionIndex,
-                            groupValue: selectedAnswers[index],
-                            onChanged: (int? value) =>
-                                _selectAnswer(index, value!),
-                          );
-                        }),
-                      ],
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: 20),
+                Center(
+                  child: Text(
+                    'Question ${currentQuestionIndex + 1} of ${questions.length}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
-                );
-              }),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitQuiz,
-                child: const Text('Submit Quiz'),
-              ),
-            ],
+                ),
+                SizedBox(height: 20),
+                Text(
+                  currentQuestion['question'],
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 40),
+                ...(currentQuestion['options'] as List<dynamic>)
+                    .asMap()
+                    .entries
+                    .map((option) {
+                  int optionIndex = option.key;
+                  String optionText = option.value;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: ElevatedButton(
+                      onPressed: () => _selectAnswer(optionIndex),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        minimumSize: Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      child: Text(
+                        optionText,
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  );
+                }),
+                Spacer(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: scoreKeeper,
+                ),
+              ],
+            ),
           ),
         );
       },
