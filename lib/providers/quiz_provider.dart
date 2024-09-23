@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../services/quiz_service.dart';
 
@@ -6,22 +7,27 @@ class QuizProvider with ChangeNotifier {
   List<Map<String, dynamic>> _quizzes = [];
   Map<String, dynamic>? _currentQuizDetails;
   bool _isLoading = false;
+  String? _error;
 
   List<Map<String, dynamic>> get quizzes => _quizzes;
   Map<String, dynamic>? get currentQuizDetails => _currentQuizDetails;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> fetchQuizzes(String classId) async {
     _isLoading = true;
-    notifyListeners();
+    // notifyListeners();
 
     try {
-      _quizService.getClassQuizzes(classId).listen((snapshot) {
+      Stream<QuerySnapshot> quizStream = _quizService.getClassQuizzes(classId);
+
+      quizStream.listen((snapshot) {
         _quizzes = snapshot.docs
             .map((doc) => doc.data() as Map<String, dynamic>)
             .toList();
         _isLoading = false;
         notifyListeners();
+        print('Quizzes fetched: $_quizzes');
       });
     } catch (e) {
       _isLoading = false;
@@ -36,8 +42,6 @@ class QuizProvider with ChangeNotifier {
       String? quizId =
           await _quizService.createQuiz(classId, questions, endDate);
       if (quizId != null) {
-        // Optionally, you could fetch the new quiz details and add it to _quizzes
-        // This would update the UI immediately without waiting for the next fetch
         Map<String, dynamic> newQuiz = {
           'quizId': quizId,
           'classId': classId,
@@ -50,6 +54,8 @@ class QuizProvider with ChangeNotifier {
       }
       return quizId;
     } catch (e) {
+      _error = 'Failed to create quiz: $e';
+      notifyListeners();
       print('Error creating quiz: $e');
       return null;
     }
@@ -61,7 +67,8 @@ class QuizProvider with ChangeNotifier {
 
   Future<void> fetchQuizDetails(String quizId) async {
     _isLoading = true;
-    notifyListeners();
+    _error = null;
+    // notifyListeners();
 
     try {
       _currentQuizDetails = await _quizService.getQuizDetails(quizId);
@@ -69,6 +76,7 @@ class QuizProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _isLoading = false;
+      _error = 'Failed to load quiz details: $e';
       notifyListeners();
       print('Error fetching quiz details: $e');
     }
@@ -78,7 +86,6 @@ class QuizProvider with ChangeNotifier {
       List<Map<String, dynamic>> answers) async {
     try {
       await _quizService.submitQuiz(quizId, studentId, answers);
-      // Update the local state to reflect the submission
       int quizIndex = _quizzes.indexWhere((quiz) => quiz['quizId'] == quizId);
       if (quizIndex != -1) {
         _quizzes[quizIndex]['doneCount'] =
@@ -86,6 +93,8 @@ class QuizProvider with ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
+      _error = 'Failed to submit quiz: $e';
+      notifyListeners();
       print('Error submitting quiz: $e');
     }
   }

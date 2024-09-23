@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/quiz_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/quiz_provider.dart';
 
 class CreateQuizPage extends StatefulWidget {
   final String classId;
@@ -14,7 +15,6 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   List<GlobalKey<_QuestionCardState>> questionKeys = [
     GlobalKey<_QuestionCardState>()
   ];
-  final QuizService _quizService = QuizService();
 
   void addQuestionCard() {
     setState(() {
@@ -74,8 +74,10 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         // Create quiz
         List<Map<String, dynamic>> questions =
             questionKeys.map((key) => key.currentState?.toMap() ?? {}).toList();
-        String? quizId = await _quizService.createQuiz(
-            widget.classId, questions, pickedDate);
+
+        String? quizId = await Provider.of<QuizProvider>(context, listen: false)
+            .createQuiz(widget.classId, questions, pickedDate);
+
         if (quizId != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Quiz created successfully')),
@@ -126,6 +128,8 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     );
   }
 }
+
+// The QuestionCard class remains unchanged
 
 class QuestionCard extends StatefulWidget {
   const QuestionCard({super.key});

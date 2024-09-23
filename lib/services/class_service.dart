@@ -175,62 +175,57 @@ class ClassService {
     }
   }
 
-  Future<List<Map<String, String>>> getStudentDetails(String classId) async {
+  Future<QuerySnapshot?> getStudentDetails(String classId) async {
+    try {
+      print('Fetching students for class: $classId');
+
+      // First, get the class document to retrieve the list of student IDs
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+
+      if (!classDoc.exists) {
+        print('Class document does not exist for ID: $classId');
+        return null;
+      }
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> studentIds = classData['studentIds'] ?? [];
+
+      print('Student IDs found in class: $studentIds');
+
+      if (studentIds.isEmpty) {
+        print('No students in this class');
+        return null;
+      }
+
+      // Now fetch the user documents for these student IDs
+      QuerySnapshot studentDocs = await _firestore
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: studentIds)
+          .get();
+
+      print('Fetched ${studentDocs.docs.length} student documents');
+
+      return studentDocs;
+    } catch (e) {
+      print('Error in getStudentDetails: $e');
+      rethrow;
+    }
+  }
+
+  //get total students from cllasses collection studentIds array
+  Future<int> getTotalStudents(String classId) async {
     try {
       DocumentSnapshot classDoc =
           await _firestore.collection('classes').doc(classId).get();
-      List<String> studentIds = List<String>.from(classDoc['studentIds'] ?? []);
-
-      List<Map<String, String>> studentDetails = [];
-      for (String studentId in studentIds) {
-        DocumentSnapshot studentDoc =
-            await _firestore.collection('users').doc(studentId).get();
-        Map<String, dynamic> userData =
-            studentDoc.data() as Map<String, dynamic>;
-        studentDetails.add({
-          'id': studentId,
-          'name': userData['name'] ?? 'Unknown',
-          'email': userData['email'] ?? 'No email'
-        });
+      if (!classDoc.exists) {
+        return 0;
       }
-
-      return studentDetails;
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> studentIds = classData['studentIds'] ?? [];
+      return studentIds.length;
     } catch (e) {
-      print('Error fetching student details: $e');
-      return [];
-    }
-  }
-
-  Stream<Map<String, dynamic>> getClassStream(String classId) {
-    return _firestore
-        .collection('classes')
-        .doc(classId)
-        .snapshots()
-        .asyncMap((classSnapshot) async {
-      if (!classSnapshot.exists) {
-        return {};
-      }
-
-      Map<String, dynamic> classData =
-          classSnapshot.data() as Map<String, dynamic>;
-      List<Map<String, String>> studentDetails =
-          await getStudentDetails(classId);
-
-      classData['studentDetails'] = studentDetails;
-      return classData;
-    });
-  }
-
-  Future<int> getTotalStudents(String classId) async {
-    DocumentSnapshot classSnapshot =
-        await _firestore.collection('classes').doc(classId).get();
-    if (!classSnapshot.exists) {
+      Fluttertoast.showToast(msg: "Error getting total students: $e");
       return 0;
     }
-
-    Map<String, dynamic> classData =
-        classSnapshot.data() as Map<String, dynamic>;
-    List<dynamic> studentIds = classData['studentIds'] ?? [];
-    return studentIds.length;
   }
 }

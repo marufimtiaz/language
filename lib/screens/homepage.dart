@@ -24,9 +24,8 @@ class _HomepageState extends State<Homepage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final classProvider = Provider.of<ClassProvider>(context, listen: false);
-      if (!classProvider.isLoading && classProvider.classes.isEmpty) {
-        classProvider.fetchClasses(userProvider.userId!, userProvider.role!);
-      }
+
+      classProvider.fetchClasses(userProvider.userId!, userProvider.role!);
     });
   }
 
@@ -40,9 +39,8 @@ class _HomepageState extends State<Homepage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (!classProvider.isLoading && classProvider.classes.isEmpty) {
-      classProvider.fetchClasses(userProvider.userId!, userProvider.role!);
-    }
+    print(
+        'Building Homepage. isLoading: ${classProvider.isLoading}, classes length: ${classProvider.classes.length}');
 
     return Scaffold(
       appBar: AppBar(
