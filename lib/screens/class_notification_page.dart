@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:language/screens/audio_record_page.dart';
 import 'package:provider/provider.dart';
+import '../providers/class_provider.dart';
 import '../providers/user_provider.dart';
 import '../components/notice_card.dart';
 import '../services/class_service.dart';
 import '../services/quiz_service.dart'; // Import QuizService
-import '../utils/audio_provider.dart';
+import '../providers/audio_provider.dart';
 import 'create_quiz_page.dart';
 import 'quiz_submission_page.dart';
 import 'student_list_page.dart';
@@ -19,6 +20,7 @@ class ClassNoticePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final classProvider = Provider.of<ClassProvider>(context);
     final userProvider = Provider.of<UserProvider>(context);
     final bool isStudent = userProvider.role == "Student";
     final String userId = userProvider.user!.uid;
@@ -34,7 +36,8 @@ class ClassNoticePage extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => TranslatorPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const TranslatorPage()),
                 );
               }),
           IconButton(

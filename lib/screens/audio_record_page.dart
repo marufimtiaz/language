@@ -1,7 +1,7 @@
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../utils/audio_provider.dart';
+import '../providers/audio_provider.dart';
 
 class AudioRecordingPage extends StatelessWidget {
   const AudioRecordingPage({super.key});

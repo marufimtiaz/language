@@ -102,7 +102,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                 onDismissed: (_) => removeQuestionCard(idx),
                 child: QuestionCard(key: key),
               );
-            }).toList(),
+            }),
             const SizedBox(height: 20),
           ],
         ),
@@ -164,7 +164,7 @@ class _QuestionCardState extends State<QuestionCard> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              Text('Question no. 1'),
+              const Text('Question no. 1'),
               TextFormField(
                 controller: questionController,
                 decoration: const InputDecoration(labelText: 'Question'),

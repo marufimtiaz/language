@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:translator/translator.dart';
 
 class TranslatorPage extends StatefulWidget {
+  const TranslatorPage({super.key});
+
   @override
   _TranslatorPageState createState() => _TranslatorPageState();
 }
