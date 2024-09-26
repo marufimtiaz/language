@@ -17,7 +17,7 @@ class QuestionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        color: isSelected ? Colors.blueAccent : Colors.white,
+        color: isSelected ? Colors.green : Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Text(

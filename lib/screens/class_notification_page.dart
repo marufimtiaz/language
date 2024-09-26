@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:language/screens/add_questions.dart';
 import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
 import '../providers/class_provider.dart';
@@ -72,63 +73,71 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
             Expanded(
               child: quizProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: quizProvider.quizzes.length,
-                      itemBuilder: (context, index) {
-                        var quiz = quizProvider.quizzes[index];
-                        bool isActive = quizProvider.isActive(quiz);
-                        return FutureBuilder<bool>(
-                          future:
-                              quizProvider.isQuizDone(widget.classId, index),
-                          builder: (context, snapshot) {
-                            bool isDone = snapshot.data ?? false;
-
-                            return FutureBuilder<int>(
-                              future: quizProvider.getQuizSubmissionCount(
+                  : quizProvider.quizzes.isEmpty
+                      ? const Center(child: Text('No Notifications Yet'))
+                      : ListView.builder(
+                          itemCount: quizProvider.quizzes.length,
+                          itemBuilder: (context, index) {
+                            var quiz = quizProvider.quizzes[index];
+                            bool isActive = quizProvider.isActive(quiz);
+                            return FutureBuilder<bool>(
+                              future: quizProvider.isQuizDone(
                                   widget.classId, index),
-                              builder: (context, submissionSnapshot) {
-                                int submissionCount =
-                                    submissionSnapshot.data ?? 0;
+                              builder: (context, snapshot) {
+                                bool isDone = snapshot.data ?? false;
 
-                                return NoticeCard(
-                                  titleText: 'Quiz ${index + 1}',
-                                  isActive: isActive,
-                                  completionNum: submissionCount,
-                                  isDone: isDone,
-                                  chipText: isActive
-                                      ? 'Deadline: ${_formatDate(quiz['dateEnd'].toDate())}'
-                                      : 'Deadline Reached: ${_formatDate(quiz['dateEnd'].toDate())}',
-                                  smallText:
-                                      'Created at ${_formatDate(quiz['dateCreated'].toDate())}',
-                                  isStudent: isStudent,
-                                  totalStudents: classProvider.totalStudents,
-                                  onPressed: () {
-                                    if (isStudent) {
-                                      if (isDone) {
-                                        UIUtils.showToast(
-                                            "Quiz already submitted");
-                                      } else {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                QuizSubmissionPage(
-                                              classId: widget.classId,
-                                              quizIndex: index,
-                                              studentId: userId,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }
+                                return FutureBuilder<int>(
+                                  future: quizProvider.getQuizSubmissionCount(
+                                      widget.classId, index),
+                                  builder: (context, submissionSnapshot) {
+                                    int submissionCount =
+                                        submissionSnapshot.data ?? 0;
+
+                                    return NoticeCard(
+                                      titleText: 'Quiz ${index + 1}',
+                                      isActive: isActive,
+                                      completionNum: submissionCount,
+                                      isDone: isDone,
+                                      chipText: isActive
+                                          ? 'Deadline: ${_formatDate(quiz['dateEnd'].toDate())}'
+                                          : 'Deadline Reached: ${_formatDate(quiz['dateEnd'].toDate())}',
+                                      smallText:
+                                          'Created at ${_formatDate(quiz['dateCreated'].toDate())}',
+                                      isStudent: isStudent,
+                                      totalStudents:
+                                          classProvider.totalStudents,
+                                      onPressed: () {
+                                        if (isStudent) {
+                                          if (isDone) {
+                                            UIUtils.showToast(
+                                                "Quiz already submitted");
+                                          } else {
+                                            if (isActive) {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      QuizSubmissionPage(
+                                                    classId: widget.classId,
+                                                    quizIndex: index,
+                                                    studentId: userId,
+                                                  ),
+                                                ),
+                                              );
+                                            } else {
+                                              UIUtils.showToast(
+                                                  "Quiz deadline reached");
+                                            }
+                                          }
+                                        }
+                                      },
+                                    );
                                   },
                                 );
                               },
                             );
                           },
-                        );
-                      },
-                    ),
+                        ),
             ),
           ],
         ),
@@ -143,7 +152,9 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
   }
 
   String _formatDate(DateTime date) {
-    return "${date.day} ${_getMonthName(date.month)}; ${date.hour}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}";
+    int hour = date.hour > 12 ? date.hour - 12 : date.hour;
+    hour = hour == 0 ? 12 : hour; // Handle midnight and noon cases
+    return "${date.day} ${_getMonthName(date.month)}; $hour:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}";
   }
 
   String _getMonthName(int month) {
@@ -184,7 +195,8 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
                           QuizCreationPage(classId: widget.classId),
                     ));
                   },
-                  child: const Text('Quiz'),
+                  child:
+                      const Text('Quiz', style: TextStyle(color: Colors.black)),
                 ),
                 const Divider(),
                 TextButton(
@@ -196,7 +208,18 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
                       ),
                     ));
                   },
-                  child: const Text('Pronunciation Challenge'),
+                  child: const Text('Pronunciation Challenge',
+                      style: TextStyle(color: Colors.black)),
+                ),
+                const Divider(),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const AddQuestionPage(),
+                    ));
+                  },
+                  child: const Text('Add Questions',
+                      style: TextStyle(color: Colors.black)),
                 ),
               ],
             ),

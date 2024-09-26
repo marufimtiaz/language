@@ -57,9 +57,12 @@ class _QuizCreationPageState extends State<QuizCreationPage> {
     );
 
     if (pickedDate != null) {
-      setState(() {
-        endDate = pickedDate;
-      });
+      setState(
+        () {
+          endDate = DateTime(
+              pickedDate.year, pickedDate.month, pickedDate.day, 23, 59, 59);
+        },
+      );
 
       final quizProvider = Provider.of<QuizProvider>(context, listen: false);
 
@@ -106,9 +109,10 @@ class _QuizCreationPageState extends State<QuizCreationPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _pickEndDate,
-        child: const Icon(Icons.date_range),
+        label: const Text('Create Quiz'),
+        icon: const Icon(Icons.add),
       ),
     );
   }
