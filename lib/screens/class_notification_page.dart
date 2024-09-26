@@ -29,7 +29,7 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
       final quizProvider = Provider.of<QuizProvider>(context, listen: false);
       final classProvider = Provider.of<ClassProvider>(context, listen: false);
       classProvider.getStudentList(classId: widget.classId);
-      quizProvider.fetchQuizzes(widget.classId);
+      quizProvider.fetchQuizList(widget.classId);
     });
   }
 
@@ -41,9 +41,6 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
 
     final bool isStudent = userProvider.role == "Student";
     final String userId = userProvider.userId!;
-
-    print(
-        'Building ClassNoticePage. isLoading: ${quizProvider.isLoading}, quizzes length: ${quizProvider.quizzes.length}');
 
     return Scaffold(
       appBar: AppBar(
@@ -73,53 +70,65 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: ListView.builder(
-                itemCount: quizProvider.quizzes.length,
-                itemBuilder: (context, index) {
-                  var quiz = quizProvider.quizzes[index];
-                  bool isActive =
-                      DateTime.now().isBefore(quiz['endDate'].toDate());
-                  return FutureBuilder<bool>(
-                    future: quizProvider.isQuizDone(quiz['quizId'], userId),
-                    builder: (context, snapshot) {
-                      bool isDone = snapshot.data ?? false;
+              child: quizProvider.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      itemCount: quizProvider.quizzes.length,
+                      itemBuilder: (context, index) {
+                        var quiz = quizProvider.quizzes[index];
+                        bool isActive = quizProvider.isActive(quiz);
+                        return FutureBuilder<bool>(
+                          future:
+                              quizProvider.isQuizDone(widget.classId, index),
+                          builder: (context, snapshot) {
+                            bool isDone = snapshot.data ?? false;
 
-                      int totalStudents = classProvider.totalStudents;
+                            return FutureBuilder<int>(
+                              future: quizProvider.getQuizSubmissionCount(
+                                  widget.classId, index),
+                              builder: (context, submissionSnapshot) {
+                                int submissionCount =
+                                    submissionSnapshot.data ?? 0;
 
-                      return NoticeCard(
-                        titleText: 'Quiz ${index + 1}',
-                        isActive: isActive,
-                        completionNum: quiz['doneCount'] ?? 0,
-                        isDone: isDone,
-                        chipText: isActive
-                            ? 'Deadline: ${_formatDate(quiz['endDate'].toDate())}'
-                            : 'Deadline Reached: ${_formatDate(quiz['endDate'].toDate())}',
-                        smallText:
-                            'Created at ${_formatDate(quiz['dateCreated'].toDate())}',
-                        isStudent: isStudent,
-                        totalStudents: totalStudents,
-                        onPressed: () {
-                          if (isStudent) {
-                            if (isDone) {
-                              UIUtils.showToast("Quiz already submitted");
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => QuizSubmissionPage(
-                                    quizId: quiz['quizId'],
-                                    studentId: userId,
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
+                                return NoticeCard(
+                                  titleText: 'Quiz ${index + 1}',
+                                  isActive: isActive,
+                                  completionNum: submissionCount,
+                                  isDone: isDone,
+                                  chipText: isActive
+                                      ? 'Deadline: ${_formatDate(quiz['dateEnd'].toDate())}'
+                                      : 'Deadline Reached: ${_formatDate(quiz['dateEnd'].toDate())}',
+                                  smallText:
+                                      'Created at ${_formatDate(quiz['dateCreated'].toDate())}',
+                                  isStudent: isStudent,
+                                  totalStudents: classProvider.totalStudents,
+                                  onPressed: () {
+                                    if (isStudent) {
+                                      if (isDone) {
+                                        UIUtils.showToast(
+                                            "Quiz already submitted");
+                                      } else {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                QuizSubmissionPage(
+                                              classId: widget.classId,
+                                              quizIndex: index,
+                                              studentId: userId,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -172,7 +181,7 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (context) =>
-                          CreateQuizPage(classId: widget.classId),
+                          QuizCreationPage(classId: widget.classId),
                     ));
                   },
                   child: const Text('Quiz'),

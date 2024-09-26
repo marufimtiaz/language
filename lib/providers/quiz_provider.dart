@@ -1,106 +1,96 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 import '../services/quiz_service.dart';
 
 class QuizProvider with ChangeNotifier {
   final QuizService _quizService = QuizService();
   List<Map<String, dynamic>> _quizzes = [];
-  Map<String, dynamic>? _currentQuizDetails;
   bool _isLoading = false;
-  String? _error;
 
   List<Map<String, dynamic>> get quizzes => _quizzes;
-  Map<String, dynamic>? get currentQuizDetails => _currentQuizDetails;
   bool get isLoading => _isLoading;
-  String? get error => _error;
 
-  Future<void> fetchQuizzes(String classId) async {
+  Future<void> fetchQuizList(String classId) async {
     _isLoading = true;
     // notifyListeners();
 
     try {
-      Stream<QuerySnapshot> quizStream = _quizService.getClassQuizzes(classId);
-
-      quizStream.listen((snapshot) {
-        _quizzes = snapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .toList();
-        _isLoading = false;
-        notifyListeners();
-        print('Quizzes fetched: $_quizzes');
-      });
-    } catch (e) {
+      _quizzes = await _quizService.fetchQuizList(classId);
       _isLoading = false;
       notifyListeners();
+    } catch (e) {
       print('Error fetching quizzes: $e');
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  Future<String?> createQuiz(String classId,
-      List<Map<String, dynamic>> questions, DateTime endDate) async {
+  // fetchQuizQuestions
+  Future<List<Map<String, dynamic>>> fetchQuizQuestions(
+      String classId, int quizIndex) async {
     try {
-      String? quizId =
-          await _quizService.createQuiz(classId, questions, endDate);
-      if (quizId != null) {
-        Map<String, dynamic> newQuiz = {
-          'quizId': quizId,
-          'classId': classId,
-          'questions': questions,
-          'endDate': endDate,
-          'dateCreated': DateTime.now(),
-        };
-        _quizzes.add(newQuiz);
-        notifyListeners();
-      }
-      return quizId;
+      return await _quizService.fetchQuizQuestions(classId, quizIndex);
     } catch (e) {
-      _error = 'Failed to create quiz: $e';
-      notifyListeners();
+      print('Error fetching quiz questions: $e');
+      return [];
+    }
+  }
+
+  // fetchquestions
+  Future<List<Map<String, dynamic>>> fetchQuestions() async {
+    return await _quizService.fetchQuestions();
+  }
+
+  Future<String?> createQuiz(
+      String classId, List<int> questionIds, DateTime endDate) async {
+    try {
+      String? result =
+          await _quizService.createQuiz(classId, questionIds, endDate);
+      if (result != null) {
+        await fetchQuizList(classId);
+      }
+      return result;
+    } catch (e) {
       print('Error creating quiz: $e');
       return null;
     }
   }
 
-  Future<bool> isQuizDone(String quizId, String studentId) async {
-    return await _quizService.isQuizDone(quizId, studentId);
-  }
-
-  Future<void> fetchQuizDetails(String quizId) async {
-    _isLoading = true;
-    _error = null;
-    // notifyListeners();
-
+  Future<bool> deleteQuiz(String classId, int quizIndex) async {
     try {
-      _currentQuizDetails = await _quizService.getQuizDetails(quizId);
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _isLoading = false;
-      _error = 'Failed to load quiz details: $e';
-      notifyListeners();
-      print('Error fetching quiz details: $e');
-    }
-  }
-
-  Future<void> submitQuiz(String quizId, String studentId,
-      List<Map<String, dynamic>> answers) async {
-    try {
-      await _quizService.submitQuiz(quizId, studentId, answers);
-      int quizIndex = _quizzes.indexWhere((quiz) => quiz['quizId'] == quizId);
-      if (quizIndex != -1) {
-        _quizzes[quizIndex]['doneCount'] =
-            (_quizzes[quizIndex]['doneCount'] ?? 0) + 1;
+      bool result = await _quizService.deleteQuiz(classId, quizIndex);
+      if (result) {
+        await fetchQuizList(classId);
       }
-      notifyListeners();
+      return result;
     } catch (e) {
-      _error = 'Failed to submit quiz: $e';
-      notifyListeners();
-      print('Error submitting quiz: $e');
+      print('Error deleting quiz: $e');
+      return false;
     }
   }
 
-  void clearCurrentQuizDetails() {
-    _currentQuizDetails = null;
-    notifyListeners();
+  Future<bool> submitQuiz(String classId, int quizIndex, int score) async {
+    try {
+      bool result = await _quizService.submitQuiz(classId, quizIndex, score);
+      if (result) {
+        await fetchQuizList(classId);
+      }
+      return result;
+    } catch (e) {
+      print('Error submitting quiz: $e');
+      return false;
+    }
+  }
+
+  Future<bool> isQuizDone(String classId, int quizIndex) async {
+    return await _quizService.isQuizDone(classId, quizIndex);
+  }
+
+  bool isActive(Map<String, dynamic> quiz) {
+    return _quizService.isActive(quiz);
+  }
+
+  Future<int> getQuizSubmissionCount(String classId, int quizIndex) async {
+    return await _quizService.getQuizSubmissionCount(classId, quizIndex);
   }
 }

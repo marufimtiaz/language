@@ -3,24 +3,27 @@ import 'package:provider/provider.dart';
 import '../providers/quiz_provider.dart';
 
 class QuizSubmissionPage extends StatefulWidget {
-  final String quizId;
+  final String classId;
+  final int quizIndex;
   final String studentId;
 
   const QuizSubmissionPage({
-    super.key,
-    required this.quizId,
+    Key? key,
+    required this.classId,
+    required this.quizIndex,
     required this.studentId,
-  });
+  }) : super(key: key);
 
   @override
   QuizSubmissionPageState createState() => QuizSubmissionPageState();
 }
 
 class QuizSubmissionPageState extends State<QuizSubmissionPage> {
-  List<int?> selectedAnswers = [];
+  Map<String, int> selectedAnswers = {};
   List<Icon> scoreKeeper = [];
   bool isLoading = true;
   int currentQuestionIndex = 0;
+  List<Map<String, dynamic>>? quizData;
 
   @override
   void initState() {
@@ -33,14 +36,12 @@ class QuizSubmissionPageState extends State<QuizSubmissionPage> {
       isLoading = true;
     });
 
-    await Provider.of<QuizProvider>(context, listen: false)
-        .fetchQuizDetails(widget.quizId);
+    final quizProvider = Provider.of<QuizProvider>(context, listen: false);
+    quizData =
+        await quizProvider.fetchQuizQuestions(widget.classId, widget.quizIndex);
 
-    final quizData =
-        Provider.of<QuizProvider>(context, listen: false).currentQuizDetails;
-    if (quizData != null && quizData['questions'] != null) {
+    if (quizData != null) {
       setState(() {
-        selectedAnswers = List.filled(quizData['questions'].length, null);
         isLoading = false;
       });
     } else {
@@ -51,24 +52,23 @@ class QuizSubmissionPageState extends State<QuizSubmissionPage> {
   }
 
   void _selectAnswer(int answerIndex) {
-    final quizData =
-        Provider.of<QuizProvider>(context, listen: false).currentQuizDetails;
-    final questions = quizData!['questions'] as List<dynamic>;
-    final currentQuestion = questions[currentQuestionIndex];
-    final correctAnswerIndex = currentQuestion['correctAnswer'];
+    if (quizData == null) return;
+
+    final currentQuestion = quizData![currentQuestionIndex];
+    final correctAnswerIndex = currentQuestion['answer'];
 
     setState(() {
-      selectedAnswers[currentQuestionIndex] = answerIndex;
+      selectedAnswers[currentQuestionIndex.toString()] = answerIndex;
 
       // Add feedback icon
       if (answerIndex == correctAnswerIndex) {
-        scoreKeeper.add(Icon(Icons.check, color: Colors.green));
+        scoreKeeper.add(const Icon(Icons.check, color: Colors.green));
       } else {
-        scoreKeeper.add(Icon(Icons.close, color: Colors.red));
+        scoreKeeper.add(const Icon(Icons.close, color: Colors.red));
       }
 
       // Move to next question or finish quiz
-      if (currentQuestionIndex < selectedAnswers.length - 1) {
+      if (currentQuestionIndex < quizData!.length - 1) {
         currentQuestionIndex++;
       } else {
         _submitQuiz();
@@ -77,18 +77,24 @@ class QuizSubmissionPageState extends State<QuizSubmissionPage> {
   }
 
   Future<void> _submitQuiz() async {
-    List<Map<String, dynamic>> answers = [];
-    for (int i = 0; i < selectedAnswers.length; i++) {
-      answers.add({
-        'questionIndex': i,
-        'selectedAnswer': selectedAnswers[i],
-      });
+    final quizProvider = Provider.of<QuizProvider>(context, listen: false);
+    int correctAnswers =
+        scoreKeeper.where((icon) => icon.color == Colors.green).length;
+    bool result = await quizProvider.submitQuiz(
+      widget.classId,
+      widget.quizIndex,
+      correctAnswers,
+    );
+
+    if (result) {
+      _showResult();
+    } else {
+      // Handle submission failure
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Failed to submit quiz. Please try again.')),
+      );
     }
-
-    await Provider.of<QuizProvider>(context, listen: false)
-        .submitQuiz(widget.quizId, widget.studentId, answers);
-
-    _showResult();
   }
 
   void _showResult() {
@@ -98,12 +104,12 @@ class QuizSubmissionPageState extends State<QuizSubmissionPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Quiz Completed'),
+          title: const Text('Quiz Completed'),
           content: Text(
               'You got $correctAnswers out of ${selectedAnswers.length} correct!'),
           actions: <Widget>[
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context)
@@ -118,88 +124,78 @@ class QuizSubmissionPageState extends State<QuizSubmissionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<QuizProvider>(
-      builder: (context, quizProvider, child) {
-        final quizData = quizProvider.currentQuizDetails;
+    if (isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-        if (isLoading) {
-          return const Scaffold(
-              body: Center(child: CircularProgressIndicator()));
-        }
+    if (quizData == null || quizData!.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Quiz')),
+        body:
+            const Center(child: Text('No questions available for this quiz.')),
+      );
+    }
 
-        if (quizData == null ||
-            quizData['questions'] == null ||
-            (quizData['questions'] as List).isEmpty) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Quiz')),
-            body: const Center(
-                child: Text('No questions available for this quiz.')),
-          );
-        }
+    final currentQuestion = quizData![currentQuestionIndex];
 
-        final questions = quizData['questions'] as List<dynamic>;
-        final currentQuestion = questions[currentQuestionIndex];
-
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(quizData['title'] ?? 'Quiz'),
-            backgroundColor: Colors.white,
-            elevation: 0,
-            centerTitle: true,
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: 20),
-                Center(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Quiz'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 20),
+            Center(
+              child: Text(
+                'Question ${currentQuestionIndex + 1} of ${quizData!.length}',
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              currentQuestion['questionText'],
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            ...(currentQuestion['options'] as List<dynamic>)
+                .asMap()
+                .entries
+                .map((option) {
+              int optionIndex = option.key;
+              String optionText = option.value;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: ElevatedButton(
+                  onPressed: () => _selectAnswer(optionIndex),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
                   child: Text(
-                    'Question ${currentQuestionIndex + 1} of ${questions.length}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    optionText,
+                    style: const TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
-                SizedBox(height: 20),
-                Text(
-                  currentQuestion['question'],
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 40),
-                ...(currentQuestion['options'] as List<dynamic>)
-                    .asMap()
-                    .entries
-                    .map((option) {
-                  int optionIndex = option.key;
-                  String optionText = option.value;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ElevatedButton(
-                      onPressed: () => _selectAnswer(optionIndex),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        minimumSize: Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      child: Text(
-                        optionText,
-                        style: TextStyle(fontSize: 16, color: Colors.white),
-                      ),
-                    ),
-                  );
-                }),
-                Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: scoreKeeper,
-                ),
-              ],
+              );
+            }).toList(),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: scoreKeeper,
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }
