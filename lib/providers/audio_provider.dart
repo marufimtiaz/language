@@ -1,3 +1,4 @@
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,6 +16,8 @@ class AudioProvider extends ChangeNotifier {
   String? _recordedFilePath;
   List<String> _savedRecordings = [];
 
+  String? _onlineAudioUrl; // URL for online audio playback
+
   RecorderController get recorderController => _recorderController;
   PlayerController get playerController => _playerController;
   bool get isRecording => _isRecording;
@@ -23,6 +26,7 @@ class AudioProvider extends ChangeNotifier {
   String get recordingDuration => _recordingDuration;
   String get playbackDuration => _playbackDuration;
   List<String> get savedRecordings => _savedRecordings;
+  String? get onlineAudioUrl => _onlineAudioUrl;
 
   AudioProvider() {
     _initControllers();
@@ -60,6 +64,7 @@ class AudioProvider extends ChangeNotifier {
     return status == PermissionStatus.granted;
   }
 
+  // Recording related functions
   Future<void> startRecording() async {
     try {
       final hasPermission = await _requestPermissions();
@@ -67,8 +72,7 @@ class AudioProvider extends ChangeNotifier {
         throw Exception('Microphone permission not granted');
       }
 
-      // Delete all previous recordings
-      await _deleteAllRecordings();
+      await _deleteAllRecordings(); // Delete all previous recordings
 
       await _setFilePath();
       await _recorderController.record(path: _recordedFilePath);
@@ -108,6 +112,7 @@ class AudioProvider extends ChangeNotifier {
     }
   }
 
+  // Local audio playback functions
   Future<void> playRecording([String? filePath]) async {
     final pathToPlay = filePath ?? _recordedFilePath;
     if (pathToPlay != null && File(pathToPlay).existsSync()) {
@@ -143,6 +148,71 @@ class AudioProvider extends ChangeNotifier {
       }
     } else {
       throw Exception('No recorded file found');
+    }
+  }
+
+  // Online audio playback
+  Future<void> playOnlineAudio(String url) async {
+    try {
+      _onlineAudioUrl = url;
+      _playerController = PlayerController();
+      await _playerController.preparePlayer(
+        path: _onlineAudioUrl!,
+        shouldExtractWaveform: true,
+        noOfSamples: 100,
+        volume: 1.0,
+      );
+      await _playerController.startPlayer();
+      _isPlaying = true;
+      _isPaused = false;
+      notifyListeners();
+
+      // Listen to playback duration changes
+      _playerController.onCurrentDurationChanged.listen((duration) {
+        _playbackDuration = _formatDuration(Duration(milliseconds: duration));
+        notifyListeners();
+      });
+
+      _playerController.onCompletion.listen((_) {
+        _isPlaying = false;
+        _playbackDuration = '00:00'; // Reset playback duration
+        notifyListeners();
+      });
+    } catch (e) {
+      print('Error playing online audio: $e');
+      rethrow;
+    }
+  }
+
+  // Function to upload recorded audio
+  Future<void> uploadRecording() async {
+    if (_recordedFilePath == null) {
+      throw Exception('No recording available to upload.');
+    }
+
+    final file = File(_recordedFilePath!);
+    final fileName =
+        'audio/${DateTime.now().millisecondsSinceEpoch}.m4a'; // Upload to 'audio' folder with timestamp
+
+    try {
+      final storageRef = FirebaseStorage.instance.ref().child(fileName);
+      final uploadTask = storageRef.putFile(file);
+
+      // Optional: Listen to upload progress
+      uploadTask.snapshotEvents.listen((event) {
+        final progress = event.bytesTransferred / event.totalBytes;
+        print('Upload progress: ${progress * 100}%');
+      });
+
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      print('Uploaded successfully. Download URL: $downloadUrl');
+      //delete the file from local storage after uploading to Firebase
+      await _deleteAllRecordings();
+    } catch (e) {
+      print('Error uploading file: $e');
+      rethrow;
     }
   }
 

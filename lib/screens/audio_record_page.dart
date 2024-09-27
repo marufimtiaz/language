@@ -4,9 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
 
-class AudioRecordingPage extends StatelessWidget {
+class AudioRecordingPage extends StatefulWidget {
   const AudioRecordingPage({super.key});
 
+  @override
+  State<AudioRecordingPage> createState() => _AudioRecordingPageState();
+}
+
+class _AudioRecordingPageState extends State<AudioRecordingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,6 +95,7 @@ class AudioRecordingPage extends StatelessWidget {
 
   Widget _buildControlButtons(
       BuildContext context, AudioProvider audioProvider) {
+    print(audioProvider.savedRecordings);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -124,16 +130,25 @@ class AudioRecordingPage extends StatelessWidget {
     );
   }
 
-  _buildUploadButton(BuildContext context, AudioProvider audioProvider) {
+  Widget _buildUploadButton(BuildContext context, AudioProvider audioProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: _buildCircularButton(
         icon: Icons.upload,
-        onPressed: () {
-          // _uploadRecording(context, audioProvider);
+        onPressed: () async {
+          try {
+            await audioProvider.uploadRecording();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Audio uploaded successfully!')),
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to upload audio: $e')),
+            );
+          }
         },
       ),
-    ); // Add this method
+    );
   }
 
   Widget _buildCircularButton({
@@ -154,32 +169,32 @@ class AudioRecordingPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRecordingsList(AudioProvider audioProvider) {
-    return Expanded(
-      child: ListView.builder(
-        itemCount: audioProvider.savedRecordings.length,
-        itemBuilder: (context, index) {
-          final recording = audioProvider.savedRecordings[index];
-          return ListTile(
-            title: Text('Recording ${index + 1}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.play_arrow),
-                  onPressed: () => audioProvider.playRecording(recording),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => audioProvider.deleteRecording(recording),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
+  // Widget _buildRecordingsList(AudioProvider audioProvider) {
+  //   return Expanded(
+  //     child: ListView.builder(
+  //       itemCount: audioProvider.savedRecordings.length,
+  //       itemBuilder: (context, index) {
+  //         final recording = audioProvider.savedRecordings[index];
+  //         return ListTile(
+  //           title: Text('Recording ${index + 1}'),
+  //           trailing: Row(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               IconButton(
+  //                 icon: const Icon(Icons.play_arrow),
+  //                 onPressed: () => audioProvider.playRecording(recording),
+  //               ),
+  //               IconButton(
+  //                 icon: const Icon(Icons.delete),
+  //                 onPressed: () => audioProvider.deleteRecording(recording),
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
 
   void _startRecording(
       BuildContext context, AudioProvider audioProvider) async {
