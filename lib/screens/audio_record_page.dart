@@ -1,17 +1,32 @@
 // UI implementation
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:language/providers/pronunciation_provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
+import '../providers/class_provider.dart';
 
 class AudioRecordingPage extends StatefulWidget {
-  const AudioRecordingPage({super.key});
+  final String classId;
+  final int pronunciationIndex;
+  const AudioRecordingPage(
+      {super.key, required this.classId, required this.pronunciationIndex});
 
   @override
   State<AudioRecordingPage> createState() => _AudioRecordingPageState();
 }
 
 class _AudioRecordingPageState extends State<AudioRecordingPage> {
+  DateTime? endDate;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pronunciationProvider =
+          Provider.of<PronunciationProvider>(context, listen: false);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,15 +51,20 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
   }
 
   Widget _buildInstructionCard() {
-    return const Card(
+    return Card(
       color: Colors.white,
-      margin: EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
       child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Text(
-          'Tap the microphone button to start recording. '
-          'You can play back your recording or save it for later.',
-          style: TextStyle(fontSize: 18),
+        padding: const EdgeInsets.all(16),
+        child: Consumer<PronunciationProvider>(
+          builder: (context, pronunciationProvider, child) {
+            final pronunciationText =
+                pronunciationProvider.pronunciations[widget.pronunciationIndex];
+            return Text(
+              pronunciationText,
+              style: const TextStyle(fontSize: 18),
+            );
+          },
         ),
       ),
     );
@@ -135,18 +155,7 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
       padding: const EdgeInsets.all(16.0),
       child: _buildCircularButton(
         icon: Icons.upload,
-        onPressed: () async {
-          try {
-            await audioProvider.uploadRecording();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Audio uploaded successfully!')),
-            );
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to upload audio: $e')),
-            );
-          }
-        },
+        onPressed: () => _pickEndDate(),
       ),
     );
   }
@@ -234,5 +243,42 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  Future<void> _pickEndDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+    if (pickedDate != null) {
+      setState(
+        () {
+          endDate = DateTime(
+              pickedDate.year, pickedDate.month, pickedDate.day, 23, 59, 59);
+        },
+      );
+      final audioProvider = Provider.of<AudioProvider>(context, listen: false);
+      final _audioUrl = await audioProvider.uploadRecording();
+
+      if (_audioUrl != null) {
+        String audioUrl = _audioUrl;
+        final quizProvider =
+            Provider.of<PronunciationProvider>(context, listen: false);
+        final result = await quizProvider.createPronunciation(
+            widget.classId, widget.pronunciationIndex, audioUrl, endDate!);
+        if (result != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pronunciation created successfully')),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error creating pronunciation')),
+          );
+        }
+      }
+    }
   }
 }

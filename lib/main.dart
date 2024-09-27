@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:language/providers/pronunciation_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:language/auth/auth_check.dart';
 import 'package:language/firebase_options.dart';
@@ -7,8 +8,6 @@ import 'package:language/providers/user_provider.dart';
 import 'package:language/providers/class_provider.dart';
 import 'package:language/providers/quiz_provider.dart';
 import 'package:language/theme/light_theme.dart';
-
-import 'providers/audio_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +28,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => QuizProvider()),
-        ChangeNotifierProvider(create: (_) => AudioProvider()),
+        ChangeNotifierProvider(create: (_) => PronunciationProvider())
       ],
       child: MaterialApp(
         title: 'E-Learning App',

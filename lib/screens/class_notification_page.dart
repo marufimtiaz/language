@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:language/screens/add_questions.dart';
+import 'package:language/screens/pronunciation_list.dart';
 import 'package:provider/provider.dart';
-import '../providers/audio_provider.dart';
 import '../providers/class_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/quiz_provider.dart';
@@ -11,7 +11,6 @@ import 'create_quiz_page.dart';
 import 'quiz_submission_page.dart';
 import 'student_list_page.dart';
 import 'translator_page.dart';
-import 'audio_record_page.dart';
 
 class ClassNoticePage extends StatefulWidget {
   final String classId;
@@ -202,9 +201,8 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => ChangeNotifierProvider(
-                        create: (context) => AudioProvider(),
-                        child: const AudioRecordingPage(),
+                      builder: (context) => PronunciationListPage(
+                        classId: widget.classId,
                       ),
                     ));
                   },

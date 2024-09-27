@@ -185,7 +185,7 @@ class AudioProvider extends ChangeNotifier {
   }
 
   // Function to upload recorded audio
-  Future<void> uploadRecording() async {
+  Future<String?> uploadRecording() async {
     if (_recordedFilePath == null) {
       throw Exception('No recording available to upload.');
     }
@@ -210,6 +210,7 @@ class AudioProvider extends ChangeNotifier {
       print('Uploaded successfully. Download URL: $downloadUrl');
       //delete the file from local storage after uploading to Firebase
       await _deleteAllRecordings();
+      return downloadUrl;
     } catch (e) {
       print('Error uploading file: $e');
       rethrow;
