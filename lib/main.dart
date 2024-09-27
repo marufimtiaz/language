@@ -8,6 +8,8 @@ import 'package:language/providers/class_provider.dart';
 import 'package:language/providers/quiz_provider.dart';
 import 'package:language/theme/light_theme.dart';
 
+import 'providers/audio_provider.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -27,6 +29,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => QuizProvider()),
+        ChangeNotifierProvider(create: (_) => AudioProvider()),
       ],
       child: MaterialApp(
         title: 'E-Learning App',

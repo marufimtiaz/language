@@ -1,3 +1,4 @@
+// UI implementation
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,121 +9,215 @@ class AudioRecordingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final audioProvider = Provider.of<AudioProvider>(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('WORK IN PROGRESS'),
+      appBar: AppBar(title: const Text('Audio Recorder')),
+      body: Consumer<AudioProvider>(
+        builder: (context, audioProvider, child) {
+          return Column(
+            children: [
+              _buildInstructionCard(),
+              _buildAudioVisualizer(audioProvider),
+              _buildDurationDisplay(audioProvider),
+              _buildControlButtons(context, audioProvider),
+              const Spacer(),
+              if (audioProvider.savedRecordings.isNotEmpty)
+                // _buildRecordingsList(audioProvider),
+                _buildUploadButton(context, audioProvider),
+            ],
+          );
+        },
       ),
-      body: Center(
-        child: Column(
-          children: [
-            const Card(
-              color: Colors.white,
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                    'Der Herbst ist meine Lieblingsjahreszeit. Die Bäume verlieren ihre Blätter, und die Luft wird kühler. Man kann warme Getränke genießen und gemütliche Spaziergänge im Park machen. Außerdem liebe ich es, in eine Decke eingewickelt ein Buch zu lesen, während es draußen regnet.',
-                    style: TextStyle(fontSize: 20)),
-              ),
-            ),
-            const Spacer(),
-            if (!audioProvider.isRecording &&
-                !audioProvider.isRecordingCompleted)
-              TextButton(
-                onPressed: () async {
-                  try {
-                    await audioProvider.startRecording();
-                  } catch (e) {
-                    String errorMessage = 'Failed to start recording';
-                    if (e.toString().contains('Permissions not granted')) {
-                      errorMessage =
-                          'Microphone permission is required to record audio';
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(errorMessage)),
-                    );
-                  }
-                },
-                child: const Icon(Icons.mic, size: 50),
-              ),
-            if (audioProvider.isRecording)
-              AudioWaveforms(
-                size: Size(MediaQuery.of(context).size.width, 200),
-                recorderController: audioProvider.recorderController,
-                enableGesture: true,
-                waveStyle: const WaveStyle(
-                  waveColor: Colors.black,
-                  extendWaveform: true,
-                  showMiddleLine: false,
-                  scaleFactor: 50.0,
-                ),
-                padding: const EdgeInsets.only(left: 18),
-                margin: const EdgeInsets.symmetric(horizontal: 15),
-              ),
-            if (audioProvider.isRecording)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Text('Recording... ${audioProvider.recordingDuration}'),
-              ),
-            if (audioProvider.isRecording)
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await audioProvider.stopRecording();
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to stop recording: $e')),
-                    );
-                  }
-                },
-                child: const Text('Stop Recording'),
-              ),
-            if (audioProvider.isRecordingCompleted && !audioProvider.isPlaying)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Text(
-                    'Recording length: ${audioProvider.recordingDuration}'),
-              ),
-            if (audioProvider.isRecordingCompleted)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    onPressed: () async {
-                      try {
-                        if (audioProvider.isPlaying) {
-                          await audioProvider.stopPlayback();
-                        } else {
-                          await audioProvider.playRecording();
-                        }
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content:
-                                  Text('Failed to play/stop recording: $e')),
-                        );
-                      }
-                    },
-                    icon: Icon(audioProvider.isPlaying
-                        ? Icons.stop
-                        : Icons.play_arrow),
-                    iconSize: 50,
-                  ),
-                  const SizedBox(width: 16.0),
-                  IconButton(
-                    onPressed: () {
-                      audioProvider.resetRecording();
-                    },
-                    icon: const Icon(Icons.refresh),
-                    iconSize: 50,
-                  ),
-                ],
-              ),
-            const Spacer(),
-          ],
+    );
+  }
+
+  Widget _buildInstructionCard() {
+    return const Card(
+      color: Colors.white,
+      margin: EdgeInsets.all(16),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Text(
+          'Tap the microphone button to start recording. '
+          'You can play back your recording or save it for later.',
+          style: TextStyle(fontSize: 18),
         ),
       ),
+    );
+  }
+
+  Widget _buildAudioVisualizer(AudioProvider audioProvider) {
+    final width = 300.0; // Adjust as needed
+    if (audioProvider.isRecording) {
+      return AudioWaveforms(
+        size: Size(width, 100),
+        recorderController: audioProvider.recorderController,
+        waveStyle: const WaveStyle(
+          waveColor: Colors.blue,
+          extendWaveform: true,
+          showMiddleLine: false,
+        ),
+      );
+    } else if (audioProvider.isPlaying) {
+      return AudioFileWaveforms(
+        size: Size(width, 100),
+        playerController: audioProvider.playerController,
+        enableSeekGesture: true,
+        playerWaveStyle: const PlayerWaveStyle(
+          fixedWaveColor: Colors.grey,
+          liveWaveColor: Colors.blue,
+          seekLineColor: Colors.red,
+          showSeekLine: true,
+        ),
+      );
+    } else {
+      return const SizedBox(height: 100);
+    }
+  }
+
+  Widget _buildDurationDisplay(AudioProvider audioProvider) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        audioProvider.isRecording
+            ? 'Recording Duration: ${audioProvider.recordingDuration}'
+            : audioProvider.isPlaying
+                ? 'Playback Duration: ${audioProvider.playbackDuration}'
+                : '', // Show playback duration when playing
+        style: const TextStyle(fontSize: 18),
+      ),
+    );
+  }
+
+  Widget _buildControlButtons(
+      BuildContext context, AudioProvider audioProvider) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (!audioProvider.isRecording &&
+            audioProvider.savedRecordings.isNotEmpty)
+          Row(
+            children: [
+              _buildCircularButton(
+                icon: audioProvider.isPlaying
+                    ? (audioProvider.isPaused ? Icons.play_arrow : Icons.pause)
+                    : Icons.play_arrow,
+                onPressed: () => _togglePlayback(context, audioProvider),
+              ),
+              if (audioProvider.isPlaying)
+                _buildCircularButton(
+                  icon: Icons.stop,
+                  onPressed: () => _stopPlayback(context, audioProvider),
+                ),
+            ],
+          ),
+        if (!audioProvider.isRecording && !audioProvider.isPlaying)
+          _buildCircularButton(
+            icon: Icons.mic,
+            onPressed: () => _startRecording(context, audioProvider),
+          ),
+        if (audioProvider.isRecording)
+          _buildCircularButton(
+            icon: Icons.stop,
+            onPressed: () => _stopRecording(context, audioProvider),
+          ),
+      ],
+    );
+  }
+
+  _buildUploadButton(BuildContext context, AudioProvider audioProvider) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: _buildCircularButton(
+        icon: Icons.upload,
+        onPressed: () {
+          // _uploadRecording(context, audioProvider);
+        },
+      ),
+    ); // Add this method
+  }
+
+  Widget _buildCircularButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: FilledButton.tonal(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: Colors.green.shade100,
+          shape: const CircleBorder(),
+          padding: const EdgeInsets.all(16),
+        ),
+        child: Icon(icon, size: 30, color: Colors.green.shade600),
+      ),
+    );
+  }
+
+  Widget _buildRecordingsList(AudioProvider audioProvider) {
+    return Expanded(
+      child: ListView.builder(
+        itemCount: audioProvider.savedRecordings.length,
+        itemBuilder: (context, index) {
+          final recording = audioProvider.savedRecordings[index];
+          return ListTile(
+            title: Text('Recording ${index + 1}'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.play_arrow),
+                  onPressed: () => audioProvider.playRecording(recording),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => audioProvider.deleteRecording(recording),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _startRecording(
+      BuildContext context, AudioProvider audioProvider) async {
+    try {
+      await audioProvider.startRecording();
+    } catch (e) {
+      _showErrorSnackBar(context, 'Failed to start recording: $e');
+    }
+  }
+
+  void _stopRecording(BuildContext context, AudioProvider audioProvider) async {
+    try {
+      await audioProvider.stopRecording();
+    } catch (e) {
+      _showErrorSnackBar(context, 'Failed to stop recording: $e');
+    }
+  }
+
+  void _togglePlayback(
+      BuildContext context, AudioProvider audioProvider) async {
+    try {
+      await audioProvider.togglePlayback();
+    } catch (e) {
+      _showErrorSnackBar(context, 'Failed to play/stop recording: $e');
+    }
+  }
+
+  void _stopPlayback(BuildContext context, AudioProvider audioProvider) async {
+    try {
+      await audioProvider.stopPlayback();
+    } catch (e) {
+      _showErrorSnackBar(context, 'Failed to stop playback: $e');
+    }
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }
