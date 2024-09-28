@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:language/screens/combined_notice_page.dart';
-import 'package:language/screens/pronunciation_notification_page.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/class_provider.dart';
@@ -89,9 +88,8 @@ class _HomepageState extends State<Homepage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  PronunciationNotificationPage(
-                                      classId: classData['classId']),
+                              builder: (context) => TabbedNotificationsPage(
+                                  classId: classData['classId']),
                             ),
                           );
                         },

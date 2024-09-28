@@ -1,37 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:language/screens/add_questions.dart';
-import 'package:language/screens/pronunciation_list.dart';
 import 'package:provider/provider.dart';
 import '../providers/class_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/quiz_provider.dart';
 import '../components/notice_card.dart';
 import '../utils/ui_utils.dart';
-import 'create_quiz_page.dart';
 import 'quiz_submission_page.dart';
-import 'student_list_page.dart';
-import 'translator_page.dart';
 
-class ClassNoticePage extends StatefulWidget {
+class ClassNoticePage extends StatelessWidget {
   final String classId;
 
-  const ClassNoticePage({super.key, required this.classId});
-
-  @override
-  State<ClassNoticePage> createState() => _ClassNoticePageState();
-}
-
-class _ClassNoticePageState extends State<ClassNoticePage> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-      final classProvider = Provider.of<ClassProvider>(context, listen: false);
-      classProvider.getStudentList(classId: widget.classId);
-      quizProvider.fetchQuizList(widget.classId);
-    });
-  }
+  const ClassNoticePage({Key? key, required this.classId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -42,111 +21,84 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
     final bool isStudent = userProvider.role == "Student";
     final String userId = userProvider.userId!;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.translate_outlined),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TranslatorPage()),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.info_outline_rounded),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StudentListPage(classId: widget.classId),
-              ),
-            ),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: quizProvider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : quizProvider.quizzes.isEmpty
+                    ? const Center(child: Text('No Notifications Yet'))
+                    : ListView.builder(
+                        itemCount: quizProvider.quizzes.length,
+                        itemBuilder: (context, index) {
+                          // Reverse the index for display, but keep the original for data access
+                          int reversedIndex =
+                              quizProvider.quizzes.length - 1 - index;
+                          var quiz = quizProvider.quizzes[reversedIndex];
+                          bool isActive = quizProvider.isActive(quiz);
+                          return FutureBuilder<bool>(
+                            future:
+                                quizProvider.isQuizDone(classId, reversedIndex),
+                            builder: (context, snapshot) {
+                              bool isDone = snapshot.data ?? false;
+
+                              return FutureBuilder<int>(
+                                future: quizProvider.getQuizSubmissionCount(
+                                    classId, reversedIndex),
+                                builder: (context, submissionSnapshot) {
+                                  int submissionCount =
+                                      submissionSnapshot.data ?? 0;
+
+                                  return NoticeCard(
+                                    titleText: 'Quiz ${reversedIndex + 1}',
+                                    isActive: isActive,
+                                    completionNum: submissionCount,
+                                    isDone: isDone,
+                                    chipText: isActive
+                                        ? 'Deadline: ${_formatDate(quiz['dateEnd'].toDate())}'
+                                        : 'Deadline Reached: ${_formatDate(quiz['dateEnd'].toDate())}',
+                                    smallText:
+                                        'Created at ${_formatDate(quiz['dateCreated'].toDate())}',
+                                    isStudent: isStudent,
+                                    totalStudents: classProvider.totalStudents,
+                                    onPressed: () {
+                                      if (isStudent) {
+                                        if (isDone) {
+                                          UIUtils.showToast(
+                                              "Quiz already submitted");
+                                        } else {
+                                          if (isActive) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    QuizSubmissionPage(
+                                                  classId: classId,
+                                                  quizIndex: reversedIndex,
+                                                  studentId: userId,
+                                                ),
+                                              ),
+                                            );
+                                          } else {
+                                            UIUtils.showToast(
+                                                "Quiz deadline reached");
+                                          }
+                                        }
+                                      }
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: quizProvider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : quizProvider.quizzes.isEmpty
-                      ? const Center(child: Text('No Notifications Yet'))
-                      : ListView.builder(
-                          itemCount: quizProvider.quizzes.length,
-                          itemBuilder: (context, index) {
-                            var quiz = quizProvider.quizzes[index];
-                            bool isActive = quizProvider.isActive(quiz);
-                            return FutureBuilder<bool>(
-                              future: quizProvider.isQuizDone(
-                                  widget.classId, index),
-                              builder: (context, snapshot) {
-                                bool isDone = snapshot.data ?? false;
-
-                                return FutureBuilder<int>(
-                                  future: quizProvider.getQuizSubmissionCount(
-                                      widget.classId, index),
-                                  builder: (context, submissionSnapshot) {
-                                    int submissionCount =
-                                        submissionSnapshot.data ?? 0;
-
-                                    return NoticeCard(
-                                      titleText: 'Quiz ${index + 1}',
-                                      isActive: isActive,
-                                      completionNum: submissionCount,
-                                      isDone: isDone,
-                                      chipText: isActive
-                                          ? 'Deadline: ${_formatDate(quiz['dateEnd'].toDate())}'
-                                          : 'Deadline Reached: ${_formatDate(quiz['dateEnd'].toDate())}',
-                                      smallText:
-                                          'Created at ${_formatDate(quiz['dateCreated'].toDate())}',
-                                      isStudent: isStudent,
-                                      totalStudents:
-                                          classProvider.totalStudents,
-                                      onPressed: () {
-                                        if (isStudent) {
-                                          if (isDone) {
-                                            UIUtils.showToast(
-                                                "Quiz already submitted");
-                                          } else {
-                                            if (isActive) {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      QuizSubmissionPage(
-                                                    classId: widget.classId,
-                                                    quizIndex: index,
-                                                    studentId: userId,
-                                                  ),
-                                                ),
-                                              );
-                                            } else {
-                                              UIUtils.showToast(
-                                                  "Quiz deadline reached");
-                                            }
-                                          }
-                                        }
-                                      },
-                                    );
-                                  },
-                                );
-                              },
-                            );
-                          },
-                        ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: isStudent
-          ? null
-          : FloatingActionButton(
-              onPressed: () => _showOptionsDialog(context),
-              child: const Icon(Icons.add),
-            ),
     );
   }
 
@@ -172,58 +124,5 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
       "Dec"
     ];
     return monthNames[month - 1];
-  }
-
-  void _showOptionsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) =>
-                          QuizCreationPage(classId: widget.classId),
-                    ));
-                  },
-                  child:
-                      const Text('Quiz', style: TextStyle(color: Colors.black)),
-                ),
-                const Divider(),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => PronunciationListPage(
-                        classId: widget.classId,
-                      ),
-                    ));
-                  },
-                  child: const Text('Pronunciation Challenge',
-                      style: TextStyle(color: Colors.black)),
-                ),
-                const Divider(),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const AddQuestionPage(),
-                    ));
-                  },
-                  child: const Text('Add Questions',
-                      style: TextStyle(color: Colors.black)),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 }

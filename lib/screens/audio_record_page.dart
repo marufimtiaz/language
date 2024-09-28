@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:language/providers/pronunciation_provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
-import '../providers/class_provider.dart';
 
 class AudioRecordingPage extends StatefulWidget {
   final String classId;

@@ -229,7 +229,10 @@ class _SignupPageState extends State<SignupPage> {
                     CustomButton(
                       isLoading: _isLoading,
                       label: 'Sign in with Google',
-                      icon: Icons.g_mobiledata,
+                      image: Image.asset(
+                        'assets/g.png',
+                        scale: 5,
+                      ),
                       backgroundColor: Colors.white,
                       textColor: Colors.black,
                       borderColor: Colors.grey,
@@ -245,9 +248,9 @@ class _SignupPageState extends State<SignupPage> {
                       backgroundColor: Colors.white,
                       textColor: Colors.black,
                       borderColor: Colors.grey,
-                      onPressed: () {
-                        // Handle Apple sign in button press
-                      },
+                      onPressed:
+                          // Handle Apple sign in button press
+                          _handleGoogleSignIn,
                     ),
                   ],
                 ),

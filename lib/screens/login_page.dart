@@ -223,7 +223,10 @@ class _LoginPageState extends State<LoginPage> {
                       CustomButton(
                         isLoading: _isLoading,
                         label: 'Sign in with Google',
-                        icon: Icons.g_mobiledata,
+                        image: Image.asset(
+                          'assets/g.png',
+                          scale: 5,
+                        ),
                         backgroundColor: Colors.white,
                         textColor: Colors.black,
                         borderColor: Colors.grey,
@@ -235,12 +238,12 @@ class _LoginPageState extends State<LoginPage> {
                       CustomButton(
                         label: 'Sign in with Apple',
                         icon: Icons.apple,
-                        backgroundColor: Colors.grey.shade300,
+                        backgroundColor: Colors.white,
                         textColor: Colors.black,
                         borderColor: Colors.grey,
-                        onPressed: () {
-                          // Handle Apple sign in button press
-                        },
+                        onPressed:
+                            // Handle Apple sign in button press
+                            _handleGoogleSignIn,
                       ),
                     ],
                   ),

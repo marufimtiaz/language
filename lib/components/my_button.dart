@@ -6,6 +6,7 @@ class CustomButton extends StatefulWidget {
   final Color textColor;
   final Color? borderColor;
   final IconData? icon;
+  final Image? image;
   final void Function()? onPressed;
   final bool? isLoading;
 
@@ -15,6 +16,7 @@ class CustomButton extends StatefulWidget {
     required this.backgroundColor,
     required this.textColor,
     this.borderColor,
+    this.image,
     this.icon,
     required this.onPressed,
     this.isLoading = false,
@@ -45,8 +47,10 @@ class _CustomButtonState extends State<CustomButton> {
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                if (widget.image != null) widget.image!,
                 if (widget.icon != null) Icon(widget.icon),
-                if (widget.icon != null) const SizedBox(width: 10),
+                if (widget.icon != null || widget.image != null)
+                  const SizedBox(width: 10),
                 Text(widget.label),
               ],
             ),
