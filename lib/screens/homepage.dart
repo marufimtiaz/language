@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:language/screens/combined_notice_page.dart';
+import 'package:language/screens/pronunciation_notification_page.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/class_provider.dart';
 import '../components/class_card.dart';
 import '../components/create_class.dart';
 import '../components/join_class.dart';
-import 'class_notification_page.dart';
 import 'translator_page.dart';
 import '../auth/auth_check.dart';
 import '../auth/auth_service.dart';
@@ -88,8 +89,9 @@ class _HomepageState extends State<Homepage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ClassNoticePage(
-                                  classId: classData['classId']),
+                              builder: (context) =>
+                                  PronunciationNotificationPage(
+                                      classId: classData['classId']),
                             ),
                           );
                         },

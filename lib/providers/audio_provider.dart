@@ -72,7 +72,7 @@ class AudioProvider extends ChangeNotifier {
         throw Exception('Microphone permission not granted');
       }
 
-      await _deleteAllRecordings(); // Delete all previous recordings
+      await deleteAllRecordings(); // Delete all previous recordings
 
       await _setFilePath();
       await _recorderController.record(path: _recordedFilePath);
@@ -85,13 +85,13 @@ class AudioProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _deleteAllRecordings() async {
+  Future<void> deleteAllRecordings() async {
     try {
       for (var filePath in _savedRecordings) {
         File(filePath).deleteSync();
       }
       _savedRecordings.clear();
-      notifyListeners();
+      // notifyListeners();
     } catch (e) {
       print('Error deleting previous recordings: $e');
       rethrow;
@@ -209,7 +209,7 @@ class AudioProvider extends ChangeNotifier {
 
       print('Uploaded successfully. Download URL: $downloadUrl');
       //delete the file from local storage after uploading to Firebase
-      await _deleteAllRecordings();
+      await deleteAllRecordings();
       return downloadUrl;
     } catch (e) {
       print('Error uploading file: $e');

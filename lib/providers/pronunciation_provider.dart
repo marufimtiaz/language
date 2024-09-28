@@ -10,7 +10,10 @@ class PronunciationProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _classPronunciations = [];
   String? _currentPronunciationText;
   int _currentPronunciationIndex = -1;
-  String _currentClassId = '';
+
+  bool _isLoading = false;
+
+  bool get isLoading => _isLoading;
 
   List<String> get pronunciations => _pronunciations;
   List<Map<String, dynamic>> get classPronunciations => _classPronunciations;
@@ -23,10 +26,17 @@ class PronunciationProvider extends ChangeNotifier {
   }
 
   Future<void> fetchClassPronunciations(String classId) async {
-    _currentClassId = classId;
-    _classPronunciations =
-        await _pronunciationService.fetchPronunciationList(classId);
-    notifyListeners();
+    _isLoading = true;
+    try {
+      _classPronunciations =
+          await _pronunciationService.fetchPronunciationList(classId);
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error fetching class pronunciations(provider): $e');
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<String?> createPronunciation(String classId, int textIndex,
@@ -44,42 +54,52 @@ class PronunciationProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<void> deletePronunciation(int pronunciationIndex) async {
+  Future<void> deletePronunciation(
+      String classId, int pronunciationIndex) async {
     final result = await _pronunciationService.deletePronunciation(
-        _currentClassId, pronunciationIndex);
+        classId, pronunciationIndex);
     if (result) {
-      await fetchClassPronunciations(_currentClassId);
+      await fetchClassPronunciations(classId);
     }
   }
 
-  Future<void> submitPronunciation(
-      int pronunciationIndex, String studentAudio) async {
+  Future<bool> submitPronunciation(
+      String classId, int pronunciationIndex, String studentAudio) async {
     final result = await _pronunciationService.submitPronunciation(
-        _currentClassId, pronunciationIndex, studentAudio);
+        classId, pronunciationIndex, studentAudio);
     if (result) {
-      await fetchClassPronunciations(_currentClassId);
+      await fetchClassPronunciations(classId);
     }
+    return result;
   }
 
-  Future<void> setCurrentPronunciation(int index) async {
+  Future<void> setCurrentPronunciation(String classId, int index) async {
     _currentPronunciationIndex = index;
-    _currentPronunciationText = await _pronunciationService
-        .fetchPronunciationText(_currentClassId, index);
+    _currentPronunciationText =
+        await _pronunciationService.fetchPronunciationText(classId, index);
     notifyListeners();
   }
 
-  Future<bool> isPronunciationDone(int pronunciationIndex) async {
+  Future<String?> fetchPronunciationAudio(
+      String classId, int pronunciationIndex) async {
+    return await _pronunciationService.fetchPronunciationAudio(
+        classId, pronunciationIndex);
+  }
+
+  Future<bool> isPronunciationDone(
+      String classId, int pronunciationIndex) async {
     return await _pronunciationService.isPronunciationDone(
-        _currentClassId, pronunciationIndex);
+        classId, pronunciationIndex);
   }
 
   bool isActive(Map<String, dynamic> pronunciation) {
     return _pronunciationService.isActive(pronunciation);
   }
 
-  Future<int> getPronunciationSubmissionCount(int pronunciationIndex) async {
+  Future<int> getPronunciationSubmissionCount(
+      String classId, int pronunciationIndex) async {
     return await _pronunciationService.getPronunciationSubmissionCount(
-        _currentClassId, pronunciationIndex);
+        classId, pronunciationIndex);
   }
 
   String? get currentUserId => _auth.currentUser?.uid;

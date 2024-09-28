@@ -65,7 +65,7 @@ class ClassProvider with ChangeNotifier {
 
   Future<void> getStudentList({required String classId}) async {
     _isLoading = true;
-    notifyListeners();
+    // notifyListeners();
     try {
       print('Fetching student list for class: $classId');
       QuerySnapshot<Object?>? snapshot =

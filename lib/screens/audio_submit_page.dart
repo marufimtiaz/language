@@ -6,43 +6,64 @@ import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
 import '../providers/class_provider.dart';
 
-class AudioRecordingPage extends StatefulWidget {
+class AudioSubmitPage extends StatefulWidget {
   final String classId;
   final int pronunciationIndex;
-  const AudioRecordingPage(
-      {super.key, required this.classId, required this.pronunciationIndex});
+
+  const AudioSubmitPage({
+    super.key,
+    required this.classId,
+    required this.pronunciationIndex,
+  });
 
   @override
-  State<AudioRecordingPage> createState() => _AudioRecordingPageState();
+  State<AudioSubmitPage> createState() => _AudioSubmitPageState();
 }
 
-class _AudioRecordingPageState extends State<AudioRecordingPage> {
-  DateTime? endDate;
+class _AudioSubmitPageState extends State<AudioSubmitPage> {
+  String? teacherAudioUrl;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final audioProvider = Provider.of<AudioProvider>(context, listen: false);
-      audioProvider.deleteAllRecordings();
+      _fetchTeacherAudio();
+    });
+  }
+
+  Future<void> _fetchTeacherAudio() async {
+    final pronunciationProvider =
+        Provider.of<PronunciationProvider>(context, listen: false);
+    final url = await pronunciationProvider.fetchPronunciationAudio(
+        widget.classId, widget.pronunciationIndex);
+    print(url);
+    setState(() {
+      teacherAudioUrl = url;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(title: const Text('Audio Recorder')),
       body: Consumer<AudioProvider>(
         builder: (context, audioProvider, child) {
           return Column(
             children: [
-              _buildInstructionCard(),
-              _buildAudioVisualizer(audioProvider),
+              Expanded(
+                flex: 10,
+                child: _buildInstructionCard(audioProvider, width),
+              ),
+              Expanded(
+                  flex: 2, child: _buildAudioVisualizer(audioProvider, width)),
               _buildDurationDisplay(audioProvider),
-              _buildControlButtons(context, audioProvider),
+              Expanded(
+                  flex: 2, child: _buildControlButtons(context, audioProvider)),
               const Spacer(),
               if (audioProvider.savedRecordings.isNotEmpty)
-                // _buildRecordingsList(audioProvider),
-                _buildUploadButton(context, audioProvider),
+                Expanded(
+                    flex: 2, child: _buildUploadButton(context, audioProvider)),
             ],
           );
         },
@@ -50,7 +71,7 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
     );
   }
 
-  Widget _buildInstructionCard() {
+  Widget _buildInstructionCard(AudioProvider audioProvider, double width) {
     return Card(
       color: Colors.white,
       margin: const EdgeInsets.all(16),
@@ -60,9 +81,25 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
           builder: (context, pronunciationProvider, child) {
             final pronunciationText =
                 pronunciationProvider.pronunciations[widget.pronunciationIndex];
-            return Text(
-              pronunciationText,
-              style: const TextStyle(fontSize: 18),
+            return Column(
+              children: [
+                Text(
+                  pronunciationText,
+                  style: const TextStyle(fontSize: 18),
+                ),
+                SizedBox(height: 8),
+                _buildAudioVisualizer(audioProvider, width),
+                _buildCircularButton(
+                  icon: audioProvider.isPlaying
+                      ? (audioProvider.isPaused
+                          ? Icons.play_arrow
+                          : Icons.pause)
+                      : Icons.play_arrow,
+                  onPressed: teacherAudioUrl != null
+                      ? () => audioProvider.playOnlineAudio(teacherAudioUrl!)
+                      : () {},
+                ),
+              ],
             );
           },
         ),
@@ -70,8 +107,10 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
     );
   }
 
-  Widget _buildAudioVisualizer(AudioProvider audioProvider) {
-    final width = 300.0; // Adjust as needed
+  // ... (rest of the methods remain the same)
+
+  Widget _buildAudioVisualizer(AudioProvider audioProvider, double width) {
+    // final width = 300.0; // Adjust as needed
     if (audioProvider.isRecording) {
       return AudioWaveforms(
         size: Size(width, 100),
@@ -153,9 +192,12 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
   Widget _buildUploadButton(BuildContext context, AudioProvider audioProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: _buildCircularButton(
-        icon: Icons.upload,
-        onPressed: () => _pickEndDate(),
+      child: FilledButton.tonal(
+        style: FilledButton.styleFrom(
+          backgroundColor: Colors.green.shade100,
+        ),
+        child: Text('Upload', style: TextStyle(color: Colors.green.shade800)),
+        onPressed: () => _studentSubmit(),
       ),
     );
   }
@@ -245,39 +287,25 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
     );
   }
 
-  Future<void> _pickEndDate() async {
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2101),
-    );
-    if (pickedDate != null) {
-      setState(
-        () {
-          endDate = DateTime(
-              pickedDate.year, pickedDate.month, pickedDate.day, 23, 59, 59);
-        },
-      );
-      final audioProvider = Provider.of<AudioProvider>(context, listen: false);
-      final _audioUrl = await audioProvider.uploadRecording();
+  Future<void> _studentSubmit() async {
+    final audioProvider = Provider.of<AudioProvider>(context, listen: false);
+    final _audioUrl = await audioProvider.uploadRecording();
 
-      if (_audioUrl != null) {
-        String audioUrl = _audioUrl;
-        final pronunciationProvider =
-            Provider.of<PronunciationProvider>(context, listen: false);
-        final result = await pronunciationProvider.createPronunciation(
-            widget.classId, widget.pronunciationIndex, audioUrl, endDate!);
-        if (result != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pronunciation created successfully')),
-          );
-          Navigator.pop(context);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error creating pronunciation')),
-          );
-        }
+    if (_audioUrl != null) {
+      String audioUrl = _audioUrl;
+      final pronunciationProvider =
+          Provider.of<PronunciationProvider>(context, listen: false);
+      final result = await pronunciationProvider.submitPronunciation(
+          widget.classId, widget.pronunciationIndex, audioUrl);
+      if (result) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pronunciation submitted successfully')),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error submitting pronunciation')),
+        );
       }
     }
   }

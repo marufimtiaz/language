@@ -144,6 +144,21 @@ class PronunciationService {
     }
   }
 
+  //Fetch pronunciation teacherAudio url
+  Future<String?> fetchPronunciationAudio(
+      String classId, int pronunciationIndex) async {
+    try {
+      Map<String, dynamic>? pronunciation =
+          await fetchPronunciationIndex(classId, pronunciationIndex);
+      if (pronunciation == null) return null;
+
+      return pronunciation['teacherAudio'];
+    } catch (e) {
+      print('Error fetching Pronunciation audio: $e');
+      return null;
+    }
+  }
+
   Future<bool> isPronunciationDone(
       String classId, int pronunciationIndex) async {
     var user = _auth.currentUser;

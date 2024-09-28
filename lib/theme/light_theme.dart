@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
+      colorScheme: const ColorScheme.light(
+        primary: Colors.green,
+        secondary: Colors.green,
+      ),
       primarySwatch: Colors.green,
       scaffoldBackgroundColor: Colors.white,
       appBarTheme: const AppBarTheme(
