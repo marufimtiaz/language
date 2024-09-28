@@ -82,10 +82,10 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
           showMiddleLine: false,
         ),
       );
-    } else if (audioProvider.isPlaying) {
+    } else if (audioProvider.isOfflinePlaying) {
       return AudioFileWaveforms(
         size: Size(width, 100),
-        playerController: audioProvider.playerController,
+        playerController: audioProvider.offlinePlayerController,
         enableSeekGesture: true,
         playerWaveStyle: const PlayerWaveStyle(
           fixedWaveColor: Colors.grey,
@@ -105,8 +105,8 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
       child: Text(
         audioProvider.isRecording
             ? 'Recording Duration: ${audioProvider.recordingDuration}'
-            : audioProvider.isPlaying
-                ? 'Playback Duration: ${audioProvider.playbackDuration}'
+            : audioProvider.isOfflinePlaying
+                ? 'Playback Duration: ${audioProvider.offlinePlaybackDuration}'
                 : '', // Show playback duration when playing
         style: const TextStyle(fontSize: 18),
       ),
@@ -124,19 +124,21 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
           Row(
             children: [
               _buildCircularButton(
-                icon: audioProvider.isPlaying
-                    ? (audioProvider.isPaused ? Icons.play_arrow : Icons.pause)
+                icon: audioProvider.isOfflinePlaying
+                    ? (audioProvider.isOfflinePaused
+                        ? Icons.play_arrow
+                        : Icons.pause)
                     : Icons.play_arrow,
                 onPressed: () => _togglePlayback(context, audioProvider),
               ),
-              if (audioProvider.isPlaying)
+              if (audioProvider.isOfflinePlaying)
                 _buildCircularButton(
                   icon: Icons.stop,
                   onPressed: () => _stopPlayback(context, audioProvider),
                 ),
             ],
           ),
-        if (!audioProvider.isRecording && !audioProvider.isPlaying)
+        if (!audioProvider.isRecording && !audioProvider.isOfflinePlaying)
           _buildCircularButton(
             icon: Icons.mic,
             onPressed: () => _startRecording(context, audioProvider),
@@ -153,8 +155,11 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
   Widget _buildUploadButton(BuildContext context, AudioProvider audioProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: _buildCircularButton(
-        icon: Icons.upload,
+      child: FilledButton.tonal(
+        style: FilledButton.styleFrom(
+          backgroundColor: Colors.green.shade100,
+        ),
+        child: Text('Upload', style: TextStyle(color: Colors.green.shade800)),
         onPressed: () => _pickEndDate(),
       ),
     );
@@ -225,7 +230,7 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
   void _togglePlayback(
       BuildContext context, AudioProvider audioProvider) async {
     try {
-      await audioProvider.togglePlayback();
+      await audioProvider.toggleOfflinePlayback();
     } catch (e) {
       _showErrorSnackBar(context, 'Failed to play/stop recording: $e');
     }
@@ -233,7 +238,7 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
 
   void _stopPlayback(BuildContext context, AudioProvider audioProvider) async {
     try {
-      await audioProvider.stopPlayback();
+      await audioProvider.stopOfflinePlayback();
     } catch (e) {
       _showErrorSnackBar(context, 'Failed to stop playback: $e');
     }

@@ -1,4 +1,3 @@
-// UI implementation
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:language/providers/pronunciation_provider.dart';
@@ -22,13 +21,24 @@ class AudioSubmitPage extends StatefulWidget {
 
 class _AudioSubmitPageState extends State<AudioSubmitPage> {
   String? teacherAudioUrl;
+  String? pronunciationText;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _deleteAllRecordings();
       _fetchTeacherAudio();
+      _fetchPronunciationText();
     });
+    final pronunciationProvider =
+        Provider.of<PronunciationProvider>(context, listen: false);
+    print('pronunciationIndex: ${widget.pronunciationIndex}');
+  }
+
+  Future<void> _deleteAllRecordings() async {
+    final audioProvider = Provider.of<AudioProvider>(context, listen: false);
+    await audioProvider.deleteAllRecordings();
   }
 
   Future<void> _fetchTeacherAudio() async {
@@ -36,9 +46,22 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
         Provider.of<PronunciationProvider>(context, listen: false);
     final url = await pronunciationProvider.fetchPronunciationAudio(
         widget.classId, widget.pronunciationIndex);
-    print(url);
     setState(() {
       teacherAudioUrl = url;
+    });
+    if (url != null) {
+      final audioProvider = Provider.of<AudioProvider>(context, listen: false);
+      audioProvider.setOnlineAudioUrl(url);
+    }
+  }
+
+  Future<void> _fetchPronunciationText() async {
+    final pronunciationProvider =
+        Provider.of<PronunciationProvider>(context, listen: false);
+    final text = await pronunciationProvider.fetchPronunciationText(
+        widget.classId, widget.pronunciationIndex);
+    setState(() {
+      pronunciationText = text;
     });
   }
 
@@ -52,18 +75,21 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
           return Column(
             children: [
               Expanded(
-                flex: 10,
+                flex: 6,
                 child: _buildInstructionCard(audioProvider, width),
               ),
               Expanded(
-                  flex: 2, child: _buildAudioVisualizer(audioProvider, width)),
+                flex: 2,
+                child: _buildAudioVisualizer(audioProvider, width),
+              ),
               _buildDurationDisplay(audioProvider),
               Expanded(
-                  flex: 2, child: _buildControlButtons(context, audioProvider)),
+                flex: 2,
+                child: _buildControlButtons(context, audioProvider),
+              ),
               const Spacer(),
               if (audioProvider.savedRecordings.isNotEmpty)
-                Expanded(
-                    flex: 2, child: _buildUploadButton(context, audioProvider)),
+                _buildUploadButton(context, audioProvider),
             ],
           );
         },
@@ -77,40 +103,40 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
       margin: const EdgeInsets.all(16),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Consumer<PronunciationProvider>(
-          builder: (context, pronunciationProvider, child) {
-            final pronunciationText =
-                pronunciationProvider.pronunciations[widget.pronunciationIndex];
-            return Column(
-              children: [
-                Text(
-                  pronunciationText,
-                  style: const TextStyle(fontSize: 18),
-                ),
-                SizedBox(height: 8),
-                _buildAudioVisualizer(audioProvider, width),
-                _buildCircularButton(
-                  icon: audioProvider.isPlaying
-                      ? (audioProvider.isPaused
-                          ? Icons.play_arrow
-                          : Icons.pause)
-                      : Icons.play_arrow,
-                  onPressed: teacherAudioUrl != null
-                      ? () => audioProvider.playOnlineAudio(teacherAudioUrl!)
-                      : () {},
-                ),
-              ],
-            );
-          },
-        ),
+        child: pronunciationText == null
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  Text(
+                    pronunciationText!,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: _buildCircularButton(
+                      icon: audioProvider.isOnlinePlaying
+                          ? (audioProvider.isOnlinePaused
+                              ? Icons.play_arrow
+                              : Icons.pause)
+                          : Icons.play_arrow,
+                      onPressed: teacherAudioUrl != null
+                          ? () => audioProvider.isOnlinePlaying
+                              ? (audioProvider.isOnlinePaused
+                                  ? audioProvider
+                                      .playOnlineAudio(teacherAudioUrl!)
+                                  : audioProvider.pauseOnlinePlayback())
+                              : audioProvider.playOnlineAudio(teacherAudioUrl!)
+                          : () {},
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 
-  // ... (rest of the methods remain the same)
-
   Widget _buildAudioVisualizer(AudioProvider audioProvider, double width) {
-    // final width = 300.0; // Adjust as needed
     if (audioProvider.isRecording) {
       return AudioWaveforms(
         size: Size(width, 100),
@@ -121,10 +147,10 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
           showMiddleLine: false,
         ),
       );
-    } else if (audioProvider.isPlaying) {
+    } else if (audioProvider.isOfflinePlaying) {
       return AudioFileWaveforms(
         size: Size(width, 100),
-        playerController: audioProvider.playerController,
+        playerController: audioProvider.offlinePlayerController,
         enableSeekGesture: true,
         playerWaveStyle: const PlayerWaveStyle(
           fixedWaveColor: Colors.grey,
@@ -144,9 +170,11 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
       child: Text(
         audioProvider.isRecording
             ? 'Recording Duration: ${audioProvider.recordingDuration}'
-            : audioProvider.isPlaying
-                ? 'Playback Duration: ${audioProvider.playbackDuration}'
-                : '', // Show playback duration when playing
+            : audioProvider.isOfflinePlaying
+                ? 'Playback Duration: ${audioProvider.offlinePlaybackDuration}'
+                // : audioProvider.isOnlinePlaying
+                //     ? 'Playback Duration: ${audioProvider.onlinePlaybackDuration}'
+                : '',
         style: const TextStyle(fontSize: 18),
       ),
     );
@@ -154,7 +182,6 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
 
   Widget _buildControlButtons(
       BuildContext context, AudioProvider audioProvider) {
-    print(audioProvider.savedRecordings);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -163,19 +190,21 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
           Row(
             children: [
               _buildCircularButton(
-                icon: audioProvider.isPlaying
-                    ? (audioProvider.isPaused ? Icons.play_arrow : Icons.pause)
+                icon: audioProvider.isOfflinePlaying
+                    ? (audioProvider.isOfflinePaused
+                        ? Icons.play_arrow
+                        : Icons.pause)
                     : Icons.play_arrow,
-                onPressed: () => _togglePlayback(context, audioProvider),
+                onPressed: () => audioProvider.toggleOfflinePlayback(),
               ),
-              if (audioProvider.isPlaying)
+              if (audioProvider.isOfflinePlaying)
                 _buildCircularButton(
                   icon: Icons.stop,
-                  onPressed: () => _stopPlayback(context, audioProvider),
+                  onPressed: () => audioProvider.stopOfflinePlayback(),
                 ),
             ],
           ),
-        if (!audioProvider.isRecording && !audioProvider.isPlaying)
+        if (!audioProvider.isRecording && !audioProvider.isOfflinePlaying)
           _buildCircularButton(
             icon: Icons.mic,
             onPressed: () => _startRecording(context, audioProvider),
@@ -220,33 +249,6 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
     );
   }
 
-  // Widget _buildRecordingsList(AudioProvider audioProvider) {
-  //   return Expanded(
-  //     child: ListView.builder(
-  //       itemCount: audioProvider.savedRecordings.length,
-  //       itemBuilder: (context, index) {
-  //         final recording = audioProvider.savedRecordings[index];
-  //         return ListTile(
-  //           title: Text('Recording ${index + 1}'),
-  //           trailing: Row(
-  //             mainAxisSize: MainAxisSize.min,
-  //             children: [
-  //               IconButton(
-  //                 icon: const Icon(Icons.play_arrow),
-  //                 onPressed: () => audioProvider.playRecording(recording),
-  //               ),
-  //               IconButton(
-  //                 icon: const Icon(Icons.delete),
-  //                 onPressed: () => audioProvider.deleteRecording(recording),
-  //               ),
-  //             ],
-  //           ),
-  //         );
-  //       },
-  //     ),
-  //   );
-  // }
-
   void _startRecording(
       BuildContext context, AudioProvider audioProvider) async {
     try {
@@ -261,23 +263,6 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
       await audioProvider.stopRecording();
     } catch (e) {
       _showErrorSnackBar(context, 'Failed to stop recording: $e');
-    }
-  }
-
-  void _togglePlayback(
-      BuildContext context, AudioProvider audioProvider) async {
-    try {
-      await audioProvider.togglePlayback();
-    } catch (e) {
-      _showErrorSnackBar(context, 'Failed to play/stop recording: $e');
-    }
-  }
-
-  void _stopPlayback(BuildContext context, AudioProvider audioProvider) async {
-    try {
-      await audioProvider.stopPlayback();
-    } catch (e) {
-      _showErrorSnackBar(context, 'Failed to stop playback: $e');
     }
   }
 

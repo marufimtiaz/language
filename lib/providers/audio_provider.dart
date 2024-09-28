@@ -4,27 +4,42 @@ import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
+import 'package:audioplayers/audioplayers.dart';
 
 class AudioProvider extends ChangeNotifier {
+  // Recorder
   late RecorderController _recorderController;
-  late PlayerController _playerController;
   bool _isRecording = false;
-  bool _isPlaying = false;
-  bool _isPaused = false;
   String _recordingDuration = '00:00';
-  String _playbackDuration = '00:00';
   String? _recordedFilePath;
+
+  // Offline Player
+  late PlayerController _offlinePlayerController;
+  bool _isOfflinePlaying = false;
+  bool _isOfflinePaused = false;
+  String _offlinePlaybackDuration = '00:00';
+
+  // Online Player
+  late AudioPlayer _onlinePlayer;
+  bool _isOnlinePlaying = false;
+  bool _isOnlinePaused = false;
+  String _onlinePlaybackDuration = '00:00';
+  String? _onlineAudioUrl;
+
   List<String> _savedRecordings = [];
 
-  String? _onlineAudioUrl; // URL for online audio playback
-
+  // Getters
   RecorderController get recorderController => _recorderController;
-  PlayerController get playerController => _playerController;
+  PlayerController get offlinePlayerController => _offlinePlayerController;
+
   bool get isRecording => _isRecording;
-  bool get isPlaying => _isPlaying;
-  bool get isPaused => _isPaused;
+  bool get isOfflinePlaying => _isOfflinePlaying;
+  bool get isOfflinePaused => _isOfflinePaused;
+  bool get isOnlinePlaying => _isOnlinePlaying;
+  bool get isOnlinePaused => _isOnlinePaused;
   String get recordingDuration => _recordingDuration;
-  String get playbackDuration => _playbackDuration;
+  String get offlinePlaybackDuration => _offlinePlaybackDuration;
+  String get onlinePlaybackDuration => _onlinePlaybackDuration;
   List<String> get savedRecordings => _savedRecordings;
   String? get onlineAudioUrl => _onlineAudioUrl;
 
@@ -39,7 +54,8 @@ class AudioProvider extends ChangeNotifier {
       ..iosEncoder = IosEncoder.kAudioFormatMPEG4AAC
       ..sampleRate = 44100;
 
-    _playerController = PlayerController();
+    _offlinePlayerController = PlayerController();
+    _onlinePlayer = AudioPlayer();
     await _loadSavedRecordings();
   }
 
@@ -91,7 +107,7 @@ class AudioProvider extends ChangeNotifier {
         File(filePath).deleteSync();
       }
       _savedRecordings.clear();
-      // notifyListeners();
+      notifyListeners();
     } catch (e) {
       print('Error deleting previous recordings: $e');
       rethrow;
@@ -112,37 +128,36 @@ class AudioProvider extends ChangeNotifier {
     }
   }
 
-  // Local audio playback functions
-  Future<void> playRecording([String? filePath]) async {
+  // Offline playback methods
+  Future<void> playOfflineRecording([String? filePath]) async {
     final pathToPlay = filePath ?? _recordedFilePath;
     if (pathToPlay != null && File(pathToPlay).existsSync()) {
       try {
-        _playerController = PlayerController();
-        await _playerController.preparePlayer(
+        await _offlinePlayerController.preparePlayer(
           path: pathToPlay,
           shouldExtractWaveform: true,
           noOfSamples: 100,
           volume: 1.0,
         );
-        await _playerController.startPlayer();
-        _isPlaying = true;
-        _isPaused = false;
+        await _offlinePlayerController.startPlayer();
+        _isOfflinePlaying = true;
+        _isOfflinePaused = false;
         notifyListeners();
 
-        // Listen to playback duration changes
-        _playerController.onCurrentDurationChanged.listen((duration) {
-          _playbackDuration = _formatDuration(Duration(milliseconds: duration));
+        _offlinePlayerController.onCurrentDurationChanged.listen((duration) {
+          _offlinePlaybackDuration =
+              _formatDuration(Duration(milliseconds: duration));
           notifyListeners();
         });
 
-        _playerController.onCompletion.listen((_) {
-          _isPlaying = false;
-          _playbackDuration = '00:00'; // Reset playback duration
+        _offlinePlayerController.onCompletion.listen((_) {
+          _isOfflinePlaying = false;
+          _offlinePlaybackDuration = '00:00';
           notifyListeners();
         });
       } catch (e) {
-        print('Error playing recording: $e');
-        _isPlaying = false;
+        print('Error playing offline recording: $e');
+        _isOfflinePlaying = false;
         notifyListeners();
         rethrow;
       }
@@ -151,36 +166,137 @@ class AudioProvider extends ChangeNotifier {
     }
   }
 
-  // Online audio playback
+  Future<void> pauseOfflinePlayback() async {
+    try {
+      await _offlinePlayerController.pausePlayer();
+      _isOfflinePaused = true;
+      notifyListeners();
+    } catch (e) {
+      print('Error pausing offline playback: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> resumeOfflinePlayback() async {
+    try {
+      await _offlinePlayerController.startPlayer();
+      _isOfflinePaused = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error resuming offline playback: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> stopOfflinePlayback() async {
+    if (_isOfflinePlaying) {
+      try {
+        await _offlinePlayerController.stopPlayer();
+        _isOfflinePlaying = false;
+        _isOfflinePaused = false;
+        notifyListeners();
+      } catch (e) {
+        print('Error stopping offline playback: $e');
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> toggleOfflinePlayback() async {
+    if (_isOfflinePlaying) {
+      if (_isOfflinePaused) {
+        await resumeOfflinePlayback();
+      } else {
+        await pauseOfflinePlayback();
+      }
+    } else {
+      await playOfflineRecording();
+    }
+  }
+
+  // Online playback methods
+
+  //set the online audio URL
+  void setOnlineAudioUrl(String url) {
+    _onlineAudioUrl = url;
+  }
+
   Future<void> playOnlineAudio(String url) async {
     try {
       _onlineAudioUrl = url;
-      _playerController = PlayerController();
-      await _playerController.preparePlayer(
-        path: _onlineAudioUrl!,
-        shouldExtractWaveform: true,
-        noOfSamples: 100,
-        volume: 1.0,
-      );
-      await _playerController.startPlayer();
-      _isPlaying = true;
-      _isPaused = false;
+
+      await _onlinePlayer.play(UrlSource(url));
+      _isOnlinePlaying = true;
+      _isOnlinePaused = false;
       notifyListeners();
 
-      // Listen to playback duration changes
-      _playerController.onCurrentDurationChanged.listen((duration) {
-        _playbackDuration = _formatDuration(Duration(milliseconds: duration));
+      _onlinePlayer.onDurationChanged.listen((duration) {
+        _onlinePlaybackDuration = _formatDuration(duration);
         notifyListeners();
       });
 
-      _playerController.onCompletion.listen((_) {
-        _isPlaying = false;
-        _playbackDuration = '00:00'; // Reset playback duration
+      _onlinePlayer.onPlayerComplete.listen((_) {
+        _isOnlinePlaying = false;
+        _onlinePlaybackDuration = '00:00';
         notifyListeners();
       });
     } catch (e) {
       print('Error playing online audio: $e');
+      _isOnlinePlaying = false;
+      notifyListeners();
       rethrow;
+    }
+  }
+
+  Future<void> pauseOnlinePlayback() async {
+    try {
+      await _onlinePlayer.pause();
+      _isOnlinePaused = true;
+      notifyListeners();
+    } catch (e) {
+      print('Error pausing online playback: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> resumeOnlinePlayback() async {
+    try {
+      await _onlinePlayer.resume();
+      _isOnlinePaused = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error resuming online playback: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> stopOnlinePlayback() async {
+    if (_isOnlinePlaying) {
+      try {
+        await _onlinePlayer.stop();
+        _isOnlinePlaying = false;
+        _isOnlinePaused = false;
+        notifyListeners();
+      } catch (e) {
+        print('Error stopping online playback: $e');
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> toggleOnlinePlayback() async {
+    if (_isOnlinePlaying) {
+      if (_isOnlinePaused) {
+        await resumeOnlinePlayback();
+      } else {
+        await pauseOnlinePlayback();
+      }
+    } else {
+      if (_onlineAudioUrl != null) {
+        await playOnlineAudio(_onlineAudioUrl!);
+      } else {
+        throw Exception('No online audio URL set');
+      }
     }
   }
 
@@ -217,48 +333,6 @@ class AudioProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> pausePlayback() async {
-    try {
-      await _playerController.pausePlayer();
-      _isPaused = true;
-      notifyListeners();
-    } catch (e) {
-      print('Error stopping playback: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> togglePlayback() async {
-    if (_isPlaying) {
-      if (_isPaused) {
-        // Resume playback if paused
-        await _playerController.startPlayer();
-        _isPaused = false;
-      } else {
-        // Pause playback if playing
-        await pausePlayback();
-      }
-    } else {
-      // Start playback if not playing or paused
-      await playRecording();
-    }
-    notifyListeners();
-  }
-
-  Future<void> stopPlayback() async {
-    if (_isPlaying) {
-      try {
-        await _playerController.stopPlayer();
-        _isPlaying = false;
-        _isPaused = false; // Reset pause state
-        notifyListeners();
-      } catch (e) {
-        print('Error stopping playback: $e');
-        rethrow;
-      }
-    }
-  }
-
   void _updateRecordingDuration() {
     _recorderController.onCurrentDuration.listen((duration) {
       _recordingDuration = _formatDuration(duration);
@@ -287,7 +361,8 @@ class AudioProvider extends ChangeNotifier {
   @override
   void dispose() {
     _recorderController.dispose();
-    _playerController.dispose();
+    _offlinePlayerController.dispose();
+    _onlinePlayer.dispose();
     super.dispose();
   }
 }

@@ -86,6 +86,13 @@ class PronunciationProvider extends ChangeNotifier {
         classId, pronunciationIndex);
   }
 
+  // fetchpronunciationText
+  Future<String?> fetchPronunciationText(
+      String classId, int pronunciationIndex) async {
+    return await _pronunciationService.fetchPronunciationText(
+        classId, pronunciationIndex);
+  }
+
   Future<bool> isPronunciationDone(
       String classId, int pronunciationIndex) async {
     return await _pronunciationService.isPronunciationDone(
