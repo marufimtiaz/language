@@ -8,6 +8,7 @@ import '../../providers/user_provider.dart';
 import '../../components/notice_card.dart';
 import '../../utils/ui_utils.dart';
 import 'audio_submit_page.dart';
+import 'pronunciation_score_page.dart';
 import 'pronunciation_submission_list.dart';
 
 class PronunciationNotificationPage extends StatefulWidget {
@@ -93,8 +94,17 @@ class _PronunciationNotificationPageState
                                     onPressed: () {
                                       if (isStudent) {
                                         if (isDone) {
-                                          UIUtils.showToast(
-                                              "Already submitted");
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  PronunciationScorePage(
+                                                classId: widget.classId,
+                                                pronunciationIndex:
+                                                    reversedIndex,
+                                              ),
+                                            ),
+                                          );
                                         } else {
                                           if (isActive) {
                                             Navigator.push(

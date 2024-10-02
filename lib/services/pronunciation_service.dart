@@ -440,4 +440,31 @@ class PronunciationService {
       rethrow;
     }
   }
+
+  Future<int> getStudentScore(String classId, int pronunciationIndex) async {
+    var user = _auth.currentUser;
+    if (user == null) return 0;
+
+    try {
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return 0;
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> pronunciationList = classData['pronunciationList'] ?? [];
+      if (pronunciationIndex < 0 ||
+          pronunciationIndex >= pronunciationList.length) return 0;
+
+      Map<String, dynamic> pronunciation =
+          pronunciationList[pronunciationIndex];
+      Map<String, dynamic> submissions = pronunciation['submissions'] ?? {};
+
+      if (submissions[user.uid] == null) return 0;
+
+      return submissions[user.uid]['score'] ?? 0;
+    } catch (e) {
+      print('Error getting student score: $e');
+      return 0;
+    }
+  }
 }

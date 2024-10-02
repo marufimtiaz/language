@@ -11,6 +11,7 @@ class QuizProvider with ChangeNotifier {
   List<int> _scores = [];
   List<Map<String, dynamic>> _studentList = [];
   bool _isLoading = false;
+  int _totalQuizQuestions = 0;
 
   List<Map<String, dynamic>> get quizzes => _quizzes;
   List<String> get studentIds => _studentIds;
@@ -18,6 +19,7 @@ class QuizProvider with ChangeNotifier {
   List<Map<String, dynamic>> get studentList => _studentList;
   int get totalStudents => _totalStudents;
   bool get isLoading => _isLoading;
+  int get totalQuizQuestions => _totalQuizQuestions;
 
   Future<void> fetchQuizList(String classId) async {
     _isLoading = true;
@@ -174,5 +176,21 @@ class QuizProvider with ChangeNotifier {
       print('Error getting student details: $e');
       return null;
     }
+  }
+
+  Future<int> getStudentScore(String classId, int quizIndex) async {
+    _isLoading = true;
+    int studentScore = await _quizService.getStudentScore(classId, quizIndex);
+
+    print('Student score: $studentScore');
+    _isLoading = false;
+    notifyListeners();
+    return studentScore;
+  }
+
+  Future<void> fetchTotalQuizQuestions(String classId, int quizIndex) async {
+    _totalQuizQuestions =
+        await _quizService.fetchTotalQuizQuestions(classId, quizIndex);
+    notifyListeners();
   }
 }

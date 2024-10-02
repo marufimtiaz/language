@@ -323,4 +323,45 @@ class QuizService {
       return 0;
     }
   }
+
+  //Get student scores for a quiz
+  Future<int> getStudentScore(String classId, int quizIndex) async {
+    var user = _auth.currentUser;
+    if (user == null) return 0;
+
+    try {
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return 0;
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> quizList = classData['quizList'] ?? [];
+      if (quizIndex < 0 || quizIndex >= quizList.length) return 0;
+
+      Map<String, dynamic> quiz = quizList[quizIndex];
+      Map<String, dynamic> scores = quiz['scores'] ?? {};
+
+      int score = scores[user.uid] ?? 0;
+
+      print('Scores: $score');
+
+      return score;
+    } catch (e) {
+      print('Error getting student score: $e');
+      return 0;
+    }
+  }
+
+  Future<int> fetchTotalQuizQuestions(String classId, int quizIndex) async {
+    try {
+      Map<String, dynamic>? quiz = await fetchQuizIndex(classId, quizIndex);
+      if (quiz == null) return 0;
+
+      List<int> questionIds = List<int>.from(quiz['questions'] ?? []);
+      return questionIds.length;
+    } catch (e) {
+      print('Error fetching total quiz questions: $e');
+      return 0;
+    }
+  }
 }

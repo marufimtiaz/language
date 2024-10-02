@@ -24,6 +24,8 @@ class _PronunciationSubmissionListState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final pronunciationProvider =
           Provider.of<PronunciationProvider>(context, listen: false);
+      pronunciationProvider.setCurrentPronunciation(
+          widget.classId, widget.pronunciationIndex);
       pronunciationProvider.getStudentList(
           classId: widget.classId,
           pronunciationIndex: widget.pronunciationIndex);
@@ -110,8 +112,9 @@ class _PronunciationSubmissionListState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Student List",
-                  style: Theme.of(context).textTheme.titleLarge),
+              _buildInstructionCard(pronunciationProvider),
+              const SizedBox(height: 8.0),
+              // Text("Student List",style: Theme.of(context).textTheme.titleLarge),
               Text(
                 "Total ${pronunciationProvider.totalStudents} submissions",
                 style: Theme.of(context).textTheme.titleMedium,
@@ -140,26 +143,30 @@ class _PronunciationSubmissionListState
       {'code': 5, 'name': 5},
     ];
 
-    return DropdownButton<int>(
-      borderRadius: BorderRadius.circular(10),
-      isExpanded: false,
-      hint: Text(score == 0 ? 'Set Score' : score.toString()),
-      value: score == 0 ? null : score,
-      underline: const SizedBox(),
-      items: scores.map((scoreItem) {
-        return DropdownMenuItem<int>(
-          value: scoreItem['code'],
-          child: Text(scoreItem['name']!.toString()),
-        );
-      }).toList(),
-      onChanged: (int? newValue) {
-        pronunciationProvider.setScore(
-          widget.classId,
-          widget.pronunciationIndex,
-          index,
-          newValue!,
-        );
-      },
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: DropdownButton<int>(
+        style: const TextStyle(fontSize: 20, color: Colors.black),
+        borderRadius: BorderRadius.circular(10),
+        isExpanded: false,
+        hint: Text(score == 0 ? 'Set Score' : score.toString()),
+        value: score == 0 ? null : score,
+        underline: const SizedBox(),
+        items: scores.map((scoreItem) {
+          return DropdownMenuItem<int>(
+            value: scoreItem['code'],
+            child: Text(scoreItem['name']!.toString()),
+          );
+        }).toList(),
+        onChanged: (int? newValue) {
+          pronunciationProvider.setScore(
+            widget.classId,
+            widget.pronunciationIndex,
+            index,
+            newValue!,
+          );
+        },
+      ),
     );
   }
 
@@ -189,7 +196,7 @@ class _PronunciationSubmissionListState
           return Card(
             child: ListTile(
               leading: CircleAvatar(
-                radius: 15,
+                radius: 16,
                 backgroundImage: student["profileImageUrl"] != null
                     ? NetworkImage(student["profileImageUrl"]!)
                     : null,
@@ -273,42 +280,23 @@ class _PronunciationSubmissionListState
     );
   }
 
-  // Widget _buildInstructionCard(AudioProvider audioProvider, double width) {
-  //   return Card(
-  //     color: Colors.white,
-  //     margin: const EdgeInsets.all(16),
-  //     child: Padding(
-  //       padding: const EdgeInsets.all(16),
-  //       child: pronunciationText == null
-  //           ? const Center(child: CircularProgressIndicator())
-  //           : Column(
-  //               children: [
-  //                 Text(
-  //                   pronunciationText!,
-  //                   style: const TextStyle(fontSize: 18),
-  //                 ),
-  //                 const SizedBox(height: 16),
-  //                 Padding(
-  //                   padding: const EdgeInsets.only(top: 16.0),
-  //                   child: _buildCircularButton(
-  //                     icon: audioProvider.isOnlinePlaying
-  //                         ? (audioProvider.isOnlinePaused
-  //                             ? Icons.play_arrow
-  //                             : Icons.pause)
-  //                         : Icons.play_arrow,
-  //                     onPressed: teacherAudioUrl != null
-  //                         ? () => audioProvider.isOnlinePlaying
-  //                             ? (audioProvider.isOnlinePaused
-  //                                 ? audioProvider
-  //                                     .playOnlineAudio(teacherAudioUrl!)
-  //                                 : audioProvider.pauseOnlinePlayback())
-  //                             : audioProvider.playOnlineAudio(teacherAudioUrl!)
-  //                         : () {},
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //     ),
-  //   );
-  // }
+  Widget _buildInstructionCard(PronunciationProvider pronunciationProvider) {
+    return Card(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: pronunciationProvider.currentPronunciationText == null
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  Text(
+                    pronunciationProvider.currentPronunciationText!,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+      ),
+    );
+  }
 }

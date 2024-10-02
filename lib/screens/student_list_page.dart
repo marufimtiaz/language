@@ -55,9 +55,37 @@ class _StudentListPageState extends State<StudentListPage> {
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () {
-                classProvider.deleteClass(widget.classId);
-                Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (context) => const Homepage()));
+                // Implement delete functionality
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Delete Class'),
+                      content: const Text(
+                          'Are you sure you want to delete this class? This action cannot be undone.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            classProvider.deleteClass(widget.classId);
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    );
+                  },
+                );
               },
             ),
         ],

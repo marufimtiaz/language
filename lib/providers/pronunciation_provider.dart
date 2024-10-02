@@ -181,5 +181,15 @@ class PronunciationProvider extends ChangeNotifier {
     }
   }
 
+  Future<int> getStudentScore(String classId, int pronunciationIndex) async {
+    _isLoading = true;
+    notifyListeners();
+    int studentScore = await _pronunciationService.getStudentScore(
+        classId, pronunciationIndex);
+    _isLoading = false;
+    notifyListeners();
+    return studentScore;
+  }
+
   String? get currentUserId => _auth.currentUser?.uid;
 }

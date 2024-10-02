@@ -6,6 +6,7 @@ import '../../providers/user_provider.dart';
 import '../../providers/quiz_provider.dart';
 import '../../components/notice_card.dart';
 import '../../utils/ui_utils.dart';
+import 'quiz_score_page.dart';
 import 'quiz_submission_page.dart';
 
 class ClassNoticePage extends StatefulWidget {
@@ -82,8 +83,15 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
                                     onPressed: () {
                                       if (isStudent) {
                                         if (isDone) {
-                                          UIUtils.showToast(
-                                              "Quiz already submitted");
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      QuizScorePage(
+                                                        classId: widget.classId,
+                                                        quizIndex:
+                                                            reversedIndex,
+                                                      )));
                                         } else {
                                           if (isActive) {
                                             Navigator.push(
