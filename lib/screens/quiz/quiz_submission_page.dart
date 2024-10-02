@@ -8,11 +8,11 @@ class QuizSubmissionPage extends StatefulWidget {
   final String studentId;
 
   const QuizSubmissionPage({
-    Key? key,
+    super.key,
     required this.classId,
     required this.quizIndex,
     required this.studentId,
-  }) : super(key: key);
+  });
 
   @override
   QuizSubmissionPageState createState() => QuizSubmissionPageState();
