@@ -106,20 +106,21 @@ class QuizProvider with ChangeNotifier {
     notifyListeners();
     try {
       _studentIds = await _quizService.getSubmissionIds(classId, quizIndex);
+      _scores = await _quizService.getScores(classId, quizIndex);
 
       QuerySnapshot<Object?>? snapshot =
           await _quizService.studentDetails(_studentIds);
       _studentList = snapshot!.docs.map((doc) {
         var data = doc.data() as Map<String, dynamic>;
-        print('Student data: $data');
+        // Add the score to the student data
+        int index = _studentIds.indexOf(doc.id);
+        if (index != -1 && index < _scores.length) {
+          data['score'] = _scores[index];
+        }
         return data;
       }).toList();
-      if (_studentList.isEmpty) {
-        _totalStudents = 0;
-      } else {
-        _totalStudents = _studentList.length;
-      }
 
+      _totalStudents = _studentList.length;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -145,11 +146,15 @@ class QuizProvider with ChangeNotifier {
   }
 
   Future<bool> submitQuiz(String classId, int quizIndex, int score) async {
+    _isLoading = true;
+    notifyListeners();
     try {
       bool result = await _quizService.submitQuiz(classId, quizIndex, score);
       if (result) {
         await fetchQuizList(classId);
       }
+      _isLoading = false;
+      notifyListeners();
       return result;
     } catch (e) {
       print('Error submitting quiz: $e');

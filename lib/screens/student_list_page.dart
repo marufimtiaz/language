@@ -4,12 +4,11 @@ import 'package:provider/provider.dart';
 import '../providers/class_provider.dart';
 import '../providers/user_provider.dart';
 import '../services/class_service.dart';
-import 'homepage.dart';
 
 class StudentListPage extends StatefulWidget {
   final String classId;
 
-  const StudentListPage({Key? key, required this.classId}) : super(key: key);
+  const StudentListPage({super.key, required this.classId});
 
   @override
   State<StudentListPage> createState() => _StudentListPageState();
@@ -42,15 +41,16 @@ class _StudentListPageState extends State<StudentListPage> {
       appBar: AppBar(
         title: const Text('Class Details'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              showDialog(
-                  context: context,
-                  builder: (BuildContext context) =>
-                      RenameDialog(classId: widget.classId));
-            },
-          ),
+          if (!isStudent)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) =>
+                        RenameDialog(classId: widget.classId));
+              },
+            ),
           if (!isStudent)
             IconButton(
               icon: const Icon(Icons.delete),

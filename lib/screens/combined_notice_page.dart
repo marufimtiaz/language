@@ -15,11 +15,10 @@ import 'quiz/add_questions.dart';
 class TabbedNotificationsPage extends StatefulWidget {
   final String classId;
 
-  const TabbedNotificationsPage({Key? key, required this.classId})
-      : super(key: key);
+  const TabbedNotificationsPage({super.key, required this.classId});
 
   @override
-  _TabbedNotificationsPageState createState() =>
+  State<TabbedNotificationsPage> createState() =>
       _TabbedNotificationsPageState();
 }
 

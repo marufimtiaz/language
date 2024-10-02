@@ -277,7 +277,7 @@ class PronunciationService {
     }
   }
 
-  Future<List<String>> getSubmissionIds(
+  Future<List<Map<String, dynamic>>> getSubmissionsData(
       String classId, int pronunciationIndex) async {
     try {
       DocumentSnapshot classDoc =
@@ -293,67 +293,43 @@ class PronunciationService {
           pronunciationList[pronunciationIndex];
       Map<String, dynamic> submissions = pronunciation['submissions'] ?? {};
 
-      print('Submissions: $submissions');
-      return submissions.keys.toList();
+      List<Map<String, dynamic>> submissionsData = [];
+      submissions.forEach((studentId, submissionData) {
+        submissionsData.add({
+          'studentId': studentId,
+          'audio': submissionData['studentAudio'],
+          'score': submissionData['score'] ?? 0,
+        });
+      });
+
+      // Sort the submissions by studentId to ensure consistent ordering
+      submissionsData.sort((a, b) => a['studentId'].compareTo(b['studentId']));
+
+      return submissionsData;
     } catch (e) {
-      print('Error getting Pronunciation submission IDs: $e');
+      print('Error getting submissions data: $e');
       return [];
     }
+  }
+
+  Future<List<String>> getSubmissionIds(
+      String classId, int pronunciationIndex) async {
+    List<Map<String, dynamic>> submissionsData =
+        await getSubmissionsData(classId, pronunciationIndex);
+    return submissionsData.map((data) => data['studentId'] as String).toList();
   }
 
   Future<List<String>> getStudentAudios(
       String classId, int pronunciationIndex) async {
-    try {
-      DocumentSnapshot classDoc =
-          await _firestore.collection('classes').doc(classId).get();
-      if (!classDoc.exists) return [];
-
-      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
-      List<dynamic> pronunciationList = classData['pronunciationList'] ?? [];
-      if (pronunciationIndex < 0 ||
-          pronunciationIndex >= pronunciationList.length) return [];
-
-      Map<String, dynamic> pronunciation =
-          pronunciationList[pronunciationIndex];
-      Map<String, dynamic> submissions = pronunciation['submissions'] ?? {};
-
-      List<String> studentAudios = [];
-      for (var submission in submissions.values) {
-        studentAudios.add(submission['studentAudio']);
-      }
-
-      return studentAudios;
-    } catch (e) {
-      print('Error getting Pronunciation student audios: $e');
-      return [];
-    }
+    List<Map<String, dynamic>> submissionsData =
+        await getSubmissionsData(classId, pronunciationIndex);
+    return submissionsData.map((data) => data['audio'] as String).toList();
   }
 
   Future<List<int>> getScores(String classId, int pronunciationIndex) async {
-    try {
-      DocumentSnapshot classDoc =
-          await _firestore.collection('classes').doc(classId).get();
-      if (!classDoc.exists) return [];
-
-      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
-      List<dynamic> pronunciationList = classData['pronunciationList'] ?? [];
-      if (pronunciationIndex < 0 ||
-          pronunciationIndex >= pronunciationList.length) return [];
-
-      Map<String, dynamic> pronunciation =
-          pronunciationList[pronunciationIndex];
-      Map<String, dynamic> submissions = pronunciation['submissions'] ?? {};
-
-      List<int> scores = [];
-      for (var submission in submissions.values) {
-        scores.add(submission['score'] ?? 0);
-      }
-
-      return scores;
-    } catch (e) {
-      print('Error getting Pronunciation scores: $e');
-      return [];
-    }
+    List<Map<String, dynamic>> submissionsData =
+        await getSubmissionsData(classId, pronunciationIndex);
+    return submissionsData.map((data) => data['score'] as int).toList();
   }
 
   Future<void> setScore(String classId, int pronunciationIndex,

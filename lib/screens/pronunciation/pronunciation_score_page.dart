@@ -81,39 +81,50 @@ class PronunciationScorePageState extends State<PronunciationScorePage> {
                     color: Colors.white,
                     margin: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Your Score',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
+                    child: score == 0
+                        ? const Center(
+                            child: Text(
+                              'Evaluation Pending',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'Your Score',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  '$score / $totalQuestions',
+                                  style: TextStyle(
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade800,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Percentage: ${((score / totalQuestions) * 100).toStringAsFixed(2)}%',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.green.shade600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '$score / $totalQuestions',
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green.shade800,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Percentage: ${((score / totalQuestions) * 100).toStringAsFixed(2)}%',
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.green.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               );

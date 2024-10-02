@@ -21,7 +21,6 @@ class _QuizDetailsPageState extends State<QuizDetailsPage> {
       final quizProvider = Provider.of<QuizProvider>(context, listen: false);
       quizProvider.getStudentList(
           classId: widget.classId, quizIndex: widget.quizIndex);
-      quizProvider.getScores(widget.classId, widget.quizIndex);
     });
   }
 
@@ -89,7 +88,6 @@ class _QuizDetailsPageState extends State<QuizDetailsPage> {
         onRefresh: () async {
           await quizProvider.getStudentList(
               classId: widget.classId, quizIndex: widget.quizIndex);
-          await quizProvider.getScores(widget.classId, widget.quizIndex);
           print('Total students: ${quizProvider.totalStudents}, '
               'Student list: ${quizProvider.studentList}, '
               'Scores: ${quizProvider.scores}');
@@ -126,9 +124,6 @@ class _QuizDetailsPageState extends State<QuizDetailsPage> {
         itemCount: quizProvider.studentList.length,
         itemBuilder: (context, index) {
           var student = quizProvider.studentList[index];
-          var score = quizProvider.scores.length > index
-              ? quizProvider.scores[index]
-              : null;
           return ListTile(
             leading: CircleAvatar(
               radius: 15,
@@ -141,8 +136,9 @@ class _QuizDetailsPageState extends State<QuizDetailsPage> {
             ),
             title: Text(student["name"] ?? "Unknown",
                 style: const TextStyle(fontSize: 18)),
-            trailing: score != null
-                ? Text("$score points", style: const TextStyle(fontSize: 12))
+            trailing: student["score"] != null
+                ? Text("${student["score"]} points",
+                    style: const TextStyle(fontSize: 12))
                 : null,
           );
         },
