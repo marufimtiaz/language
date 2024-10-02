@@ -134,25 +134,31 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
 
   Widget _buildAudioVisualizer(AudioProvider audioProvider, double width) {
     if (audioProvider.isRecording) {
-      return AudioWaveforms(
-        size: Size(width, 100),
-        recorderController: audioProvider.recorderController,
-        waveStyle: const WaveStyle(
-          waveColor: Colors.blue,
-          extendWaveform: true,
-          showMiddleLine: false,
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: AudioWaveforms(
+          size: Size(width, 100),
+          recorderController: audioProvider.recorderController,
+          waveStyle: WaveStyle(
+            waveColor: Colors.green.shade700,
+            extendWaveform: true,
+            showMiddleLine: false,
+          ),
         ),
       );
     } else if (audioProvider.isOfflinePlaying) {
-      return AudioFileWaveforms(
-        size: Size(width, 100),
-        playerController: audioProvider.offlinePlayerController,
-        enableSeekGesture: true,
-        playerWaveStyle: const PlayerWaveStyle(
-          fixedWaveColor: Colors.grey,
-          liveWaveColor: Colors.blue,
-          seekLineColor: Colors.red,
-          showSeekLine: true,
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: AudioFileWaveforms(
+          size: Size(width, 100),
+          playerController: audioProvider.offlinePlayerController,
+          enableSeekGesture: true,
+          playerWaveStyle: PlayerWaveStyle(
+            fixedWaveColor: Colors.green.shade300,
+            liveWaveColor: Colors.green.shade700,
+            seekLineColor: Colors.green.shade900,
+            showSeekLine: true,
+          ),
         ),
       );
     } else {
@@ -185,14 +191,15 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
             audioProvider.savedRecordings.isNotEmpty)
           Row(
             children: [
-              _buildCircularButton(
-                icon: audioProvider.isOfflinePlaying
-                    ? (audioProvider.isOfflinePaused
-                        ? Icons.play_arrow
-                        : Icons.pause)
-                    : Icons.play_arrow,
-                onPressed: () => audioProvider.toggleOfflinePlayback(),
-              ),
+              if (audioProvider.doneRecording)
+                _buildCircularButton(
+                  icon: audioProvider.isOfflinePlaying
+                      ? (audioProvider.isOfflinePaused
+                          ? Icons.play_arrow
+                          : Icons.pause)
+                      : Icons.play_arrow,
+                  onPressed: () => audioProvider.toggleOfflinePlayback(),
+                ),
               if (audioProvider.isOfflinePlaying)
                 _buildCircularButton(
                   icon: Icons.stop,
@@ -217,13 +224,17 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
   Widget _buildUploadButton(BuildContext context, AudioProvider audioProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: FilledButton.tonal(
-        style: FilledButton.styleFrom(
-          backgroundColor: Colors.green.shade100,
-        ),
-        child: Text('Upload', style: TextStyle(color: Colors.green.shade800)),
-        onPressed: () => _studentSubmit(),
-      ),
+      child: !audioProvider.doneRecording
+          ? const SizedBox()
+          : FilledButton.tonal(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.green.shade100,
+              ),
+              child: Text(audioProvider.isUploading ? 'Uploading...' : 'Upload',
+                  style: TextStyle(color: Colors.green.shade800)),
+              onPressed: () =>
+                  audioProvider.isUploading ? null : _studentSubmit(),
+            ),
     );
   }
 
@@ -270,7 +281,7 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
 
   Future<void> _studentSubmit() async {
     final audioProvider = Provider.of<AudioProvider>(context, listen: false);
-    final _audioUrl = await audioProvider.uploadRecording();
+    final _audioUrl = await audioProvider.uploadRecording(widget.classId);
 
     if (_audioUrl != null) {
       String audioUrl = _audioUrl;

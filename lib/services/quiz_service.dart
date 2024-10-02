@@ -38,6 +38,100 @@ class QuizService {
     }
   }
 
+  Future<bool> updateQuizDate(
+      String classId, int quizIndex, DateTime endDate) async {
+    var user = _auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      DocumentReference classRef =
+          _firestore.collection('classes').doc(classId);
+      DocumentSnapshot classDoc = await classRef.get();
+      if (!classDoc.exists) return false;
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      if (classData['teacherId'] != user.uid) return false;
+
+      List<dynamic> quizList = classData['quizList'] ?? [];
+      if (quizIndex < 0 || quizIndex >= quizList.length) return false;
+
+      Map<String, dynamic> quiz = quizList[quizIndex];
+      quiz['dateEnd'] = Timestamp.fromDate(endDate);
+      await classRef.update({'quizList': quizList});
+
+      return true;
+    } catch (e) {
+      print('Error updating quiz date: $e');
+      return false;
+    }
+  }
+
+  //get submissions
+  Future<List<String>> getSubmissionIds(String classId, int quizIndex) async {
+    try {
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return [];
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> quizList = classData['quizList'] ?? [];
+      if (quizIndex < 0 || quizIndex >= quizList.length) return [];
+
+      Map<String, dynamic> quiz = quizList[quizIndex];
+      Map<String, dynamic> scores = quiz['scores'] ?? {};
+
+      return scores.keys.toList().cast<String>();
+    } catch (e) {
+      print('Error getting submissions: $e');
+      return [];
+    }
+  }
+
+  Future<List<int>> getScores(String classId, int quizIndex) async {
+    try {
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return [];
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> quizList = classData['quizList'] ?? [];
+      if (quizIndex < 0 || quizIndex >= quizList.length) return [];
+
+      Map<String, dynamic> quiz = quizList[quizIndex];
+      Map<String, dynamic> scores = quiz['scores'] ?? {};
+
+      return scores.values.toList().cast<int>();
+    } catch (e) {
+      print('Error getting scores: $e');
+      return [];
+    }
+  }
+
+  //get user details from studentIds array
+  Future<QuerySnapshot?> studentDetails(List<dynamic> studentIds) async {
+    try {
+      print('Fetching students: $studentIds');
+
+      if (studentIds.isEmpty) {
+        print('No students submitted');
+        return null;
+      }
+
+      // Now fetch the user documents for these student IDs
+      QuerySnapshot studentDocs = await _firestore
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: studentIds)
+          .get();
+
+      print('Fetched ${studentDocs.docs.length} student documents');
+
+      return studentDocs;
+    } catch (e) {
+      print('Error in getStudentDetails: $e');
+      rethrow;
+    }
+  }
+
   Future<bool> deleteQuiz(String classId, int quizIndex) async {
     var user = _auth.currentUser;
     if (user == null) return false;

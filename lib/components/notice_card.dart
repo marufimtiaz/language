@@ -12,6 +12,7 @@ class NoticeCard extends StatelessWidget {
   final bool isStudent;
   final int totalStudents; // Add this parameter
   final VoidCallback? onPressed;
+  final VoidCallback? dateChange;
 
   const NoticeCard({
     super.key,
@@ -24,6 +25,7 @@ class NoticeCard extends StatelessWidget {
     required this.isStudent,
     required this.totalStudents, // Initialize it here
     this.onPressed,
+    this.dateChange,
   });
 
   @override
@@ -150,18 +152,21 @@ class NoticeCard extends StatelessWidget {
     required Color chipColor,
     required Color textColor,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 0),
-      child: Chip(
-        padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
-        backgroundColor: chipColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: chipColor),
-        ),
-        label: Text(
-          chipText,
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+    return GestureDetector(
+      onLongPress: dateChange,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 0),
+        child: Chip(
+          padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+          backgroundColor: chipColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: chipColor),
+          ),
+          label: Text(
+            chipText,
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );

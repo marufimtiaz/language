@@ -8,11 +8,18 @@ import '../components/notice_card.dart';
 import '../utils/ui_utils.dart';
 import 'audio_submit_page.dart';
 
-class PronunciationNotificationPage extends StatelessWidget {
+class PronunciationNotificationPage extends StatefulWidget {
   final String classId;
 
   const PronunciationNotificationPage({super.key, required this.classId});
 
+  @override
+  State<PronunciationNotificationPage> createState() =>
+      _PronunciationNotificationPageState();
+}
+
+class _PronunciationNotificationPageState
+    extends State<PronunciationNotificationPage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -46,14 +53,14 @@ class PronunciationNotificationPage extends StatelessWidget {
                               pronunciationProvider.isActive(pronunciation);
                           return FutureBuilder<bool>(
                             future: pronunciationProvider.isPronunciationDone(
-                                classId, reversedIndex),
+                                widget.classId, reversedIndex),
                             builder: (context, snapshot) {
                               bool isDone = snapshot.data ?? false;
 
                               return FutureBuilder<int>(
                                 future: pronunciationProvider
                                     .getPronunciationSubmissionCount(
-                                        classId, reversedIndex),
+                                        widget.classId, reversedIndex),
                                 builder: (context, submissionSnapshot) {
                                   int submissionCount =
                                       submissionSnapshot.data ?? 0;
@@ -71,6 +78,12 @@ class PronunciationNotificationPage extends StatelessWidget {
                                         'Created at ${_formatDate(pronunciation['dateCreated'].toDate())}',
                                     isStudent: isStudent,
                                     totalStudents: classProvider.totalStudents,
+                                    dateChange: () {
+                                      //show datepicker
+                                      _changeEndDate(
+                                          pronunciation['dateEnd'].toDate(),
+                                          reversedIndex);
+                                    },
                                     onPressed: () {
                                       if (isStudent) {
                                         if (isDone) {
@@ -87,7 +100,7 @@ class PronunciationNotificationPage extends StatelessWidget {
                                                   create: (context) =>
                                                       AudioProvider(),
                                                   child: AudioSubmitPage(
-                                                    classId: classId,
+                                                    classId: widget.classId,
                                                     pronunciationIndex:
                                                         reversedIndex,
                                                   ),
@@ -136,5 +149,34 @@ class PronunciationNotificationPage extends StatelessWidget {
       "Dec"
     ];
     return monthNames[month - 1];
+  }
+
+  Future<void> _changeEndDate(DateTime date, int pronunciationIndex) async {
+    DateTime? endDate;
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: date,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+
+    if (pickedDate != null) {
+      setState(
+        () {
+          endDate = DateTime(
+              pickedDate.year, pickedDate.month, pickedDate.day, 23, 59, 59);
+        },
+      );
+      bool result =
+          await Provider.of<PronunciationProvider>(context, listen: false)
+              .updatePronunciationDate(
+                  widget.classId, pronunciationIndex, endDate!);
+      if (result) {
+        UIUtils.showToast("Deadline updated");
+      } else {
+        UIUtils.showToast("Error updating deadline");
+      }
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:uuid/uuid.dart';
 
@@ -35,10 +36,50 @@ class ClassService {
 
   Future<void> deleteClass(String classId) async {
     try {
+      final FirebaseStorage _storage = FirebaseStorage.instance;
+      await _storage.ref('audio/$classId/').listAll().then((result) {
+        for (var file in result.items) {
+          file.delete();
+        }
+        for (var folder in result.prefixes) {
+          folder.listAll().then((subResult) {
+            for (var subFile in subResult.items) {
+              subFile.delete();
+            }
+          });
+        }
+      });
+
       await _firestore.collection('classes').doc(classId).delete();
       Fluttertoast.showToast(msg: "Class deleted successfully");
     } catch (e) {
       Fluttertoast.showToast(msg: "Error deleting class: $e");
+    }
+  }
+
+  Future<void> renameClass(String classId, String newClassName) async {
+    try {
+      await _firestore.collection('classes').doc(classId).update({
+        'name': newClassName,
+      });
+      Fluttertoast.showToast(msg: "Class renamed successfully");
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Error renaming class: $e");
+    }
+  }
+
+  Future<String?> getClassName(String classId) async {
+    try {
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) {
+        return null;
+      }
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      return classData['name'];
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Error getting class name: $e");
+      return null;
     }
   }
 

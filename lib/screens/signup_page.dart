@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../auth/auth_check.dart';
-import '../auth/auth_service.dart';
 import '../components/my_button.dart';
 import '../components/textfield.dart';
+import '../providers/user_provider.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -30,87 +31,88 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
-  Future<void> _signup() async {
-    if (_formKey.currentState!.validate()) {
+  @override
+  Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+
+    Future<void> _signup() async {
+      if (_formKey.currentState!.validate()) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = null;
+        });
+
+        try {
+          String? result = await userProvider.signupUserWithEmail(
+            _nameController.text.trim(),
+            _emailController.text.trim(),
+            _passwordController.text.trim(),
+          );
+
+          if (result != 'success') {
+            setState(() {
+              _errorMessage = 'Signup failed. Please try again.';
+            });
+          } else {
+            print("Login successful in LoginPage");
+            // Force a rebuild of the widget tree
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AuthCheck()),
+            );
+          }
+          // Successful signup is handled by AuthCheck
+        } catch (e) {
+          setState(() {
+            _errorMessage = 'An error occurred. Please try again later.';
+          });
+        } finally {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    }
+
+    Future<void> _handleGoogleSignIn() async {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
 
       try {
-        String? result = await signupUserWithEmail(
-          _nameController.text.trim(),
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-          context,
-        );
+        String? result = await userProvider.signInWithGoogle();
 
-        if (result != 'success') {
-          setState(() {
-            _errorMessage = 'Signup failed. Please try again.';
-          });
-        } else {
-          print("Login successful in LoginPage");
-          // Force a rebuild of the widget tree
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AuthCheck()),
-          );
+        if (!mounted) return; // Check if widget is still mounted
+
+        if (mounted) {
+          if (result != 'success') {
+            setState(() {
+              _errorMessage = 'Google Sign-In failed. Please try again.';
+            });
+          } else {
+            print("Login successful in LoginPage");
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AuthCheck()),
+            );
+          }
         }
-        // Successful signup is handled by AuthCheck
       } catch (e) {
-        setState(() {
-          _errorMessage = 'An error occurred. Please try again later.';
-        });
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _handleGoogleSignIn() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      String? result = await signInWithGoogle(context);
-
-      if (!mounted) return; // Check if widget is still mounted
-
-      if (mounted) {
-        if (result != 'success') {
+        if (mounted) {
           setState(() {
-            _errorMessage = 'Google Sign-In failed. Please try again.';
+            _errorMessage = 'An error occurred. Please try again later.';
           });
-        } else {
-          print("Login successful in LoginPage");
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AuthCheck()),
-          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
         }
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'An error occurred. Please try again later.';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
     return GestureDetector(

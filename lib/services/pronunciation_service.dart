@@ -40,6 +40,36 @@ class PronunciationService {
     }
   }
 
+  Future<bool> updatePronunciationDate(
+      String classId, int pronunciationIndex, DateTime endDate) async {
+    var user = _auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      DocumentReference classRef =
+          _firestore.collection('classes').doc(classId);
+      DocumentSnapshot classDoc = await classRef.get();
+      if (!classDoc.exists) return false;
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      if (classData['teacherId'] != user.uid) return false;
+
+      List<dynamic> pronunciationList = classData['pronunciationList'] ?? [];
+      if (pronunciationIndex < 0 ||
+          pronunciationIndex >= pronunciationList.length) return false;
+
+      Map<String, dynamic> pronunciation =
+          pronunciationList[pronunciationIndex];
+      pronunciation['dateEnd'] = Timestamp.fromDate(endDate);
+      await classRef.update({'pronunciationList': pronunciationList});
+
+      return true;
+    } catch (e) {
+      print('Error updating Pronunciation date: $e');
+      return false;
+    }
+  }
+
   Future<bool> deletePronunciation(
       String classId, int pronunciationIndex) async {
     var user = _auth.currentUser;

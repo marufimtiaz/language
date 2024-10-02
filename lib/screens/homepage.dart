@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:language/screens/combined_notice_page.dart';
+import 'package:language/screens/profile.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/class_provider.dart';
@@ -7,8 +8,6 @@ import '../components/class_card.dart';
 import '../components/create_class.dart';
 import '../components/join_class.dart';
 import 'translator_page.dart';
-import '../auth/auth_check.dart';
-import '../auth/auth_service.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -33,9 +32,12 @@ class _HomepageState extends State<Homepage> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final classProvider = Provider.of<ClassProvider>(context);
-    String? role = userProvider.role;
-
     if (userProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    String? role = userProvider.role;
+    String? userId = userProvider.userId;
+    if (userId == null || role == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -56,16 +58,51 @@ class _HomepageState extends State<Homepage> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              signOutUser(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const AuthCheck()),
-              );
-            },
+          // IconButton(
+          //   icon: const Icon(Icons.person),
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(
+          //         builder: (context) => ProfileManagementPage(),
+          //       ),
+          //     );
+          //   },
+          // ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfileManagementPage(),
+                  ),
+                );
+              },
+              child: CircleAvatar(
+                radius: 15,
+                backgroundImage: (userProvider.profileImageUrl != null
+                    ? NetworkImage(userProvider.profileImageUrl!)
+                    : null),
+                child: userProvider.profileImageUrl == null
+                    ? const Icon(
+                        Icons.person,
+                      )
+                    : null,
+              ),
+            ),
           ),
+          // IconButton(
+          //   icon: const Icon(Icons.logout),
+          //   onPressed: () {
+          //     userProvider.signOutUser();
+          //     Navigator.pushReplacement(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => const AuthCheck()),
+          //     );
+          //   },
+          // ),
         ],
       ),
       body: classProvider.isLoading

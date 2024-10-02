@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:language/screens/submissionList.dart';
 import 'package:provider/provider.dart';
 import '../providers/class_provider.dart';
 import '../providers/user_provider.dart';
@@ -7,11 +10,16 @@ import '../components/notice_card.dart';
 import '../utils/ui_utils.dart';
 import 'quiz_submission_page.dart';
 
-class ClassNoticePage extends StatelessWidget {
+class ClassNoticePage extends StatefulWidget {
   final String classId;
 
   const ClassNoticePage({Key? key, required this.classId}) : super(key: key);
 
+  @override
+  State<ClassNoticePage> createState() => _ClassNoticePageState();
+}
+
+class _ClassNoticePageState extends State<ClassNoticePage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -40,14 +48,14 @@ class ClassNoticePage extends StatelessWidget {
                           var quiz = quizProvider.quizzes[reversedIndex];
                           bool isActive = quizProvider.isActive(quiz);
                           return FutureBuilder<bool>(
-                            future:
-                                quizProvider.isQuizDone(classId, reversedIndex),
+                            future: quizProvider.isQuizDone(
+                                widget.classId, reversedIndex),
                             builder: (context, snapshot) {
                               bool isDone = snapshot.data ?? false;
 
                               return FutureBuilder<int>(
                                 future: quizProvider.getQuizSubmissionCount(
-                                    classId, reversedIndex),
+                                    widget.classId, reversedIndex),
                                 builder: (context, submissionSnapshot) {
                                   int submissionCount =
                                       submissionSnapshot.data ?? 0;
@@ -64,6 +72,11 @@ class ClassNoticePage extends StatelessWidget {
                                         'Created at ${_formatDate(quiz['dateCreated'].toDate())}',
                                     isStudent: isStudent,
                                     totalStudents: classProvider.totalStudents,
+                                    dateChange: () {
+                                      //show datepicker
+                                      _changeEndDate(quiz['dateEnd'].toDate(),
+                                          reversedIndex);
+                                    },
                                     onPressed: () {
                                       if (isStudent) {
                                         if (isDone) {
@@ -76,7 +89,7 @@ class ClassNoticePage extends StatelessWidget {
                                               MaterialPageRoute(
                                                 builder: (context) =>
                                                     QuizSubmissionPage(
-                                                  classId: classId,
+                                                  classId: widget.classId,
                                                   quizIndex: reversedIndex,
                                                   studentId: userId,
                                                 ),
@@ -87,6 +100,16 @@ class ClassNoticePage extends StatelessWidget {
                                                 "Quiz deadline reached");
                                           }
                                         }
+                                      } else {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  QuizDetailsPage(
+                                                      classId: widget.classId,
+                                                      quizIndex:
+                                                          reversedIndex)),
+                                        );
                                       }
                                     },
                                   );
@@ -124,5 +147,40 @@ class ClassNoticePage extends StatelessWidget {
       "Dec"
     ];
     return monthNames[month - 1];
+  }
+
+  Future<void> _changeEndDate(DateTime date, int quizIndex) async {
+    DateTime? endDate;
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: date,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+
+    if (pickedDate != null) {
+      setState(
+        () {
+          endDate = DateTime(
+              pickedDate.year, pickedDate.month, pickedDate.day, 23, 59, 59);
+        },
+      );
+
+      final quizProvider = Provider.of<QuizProvider>(context, listen: false);
+
+      final result = await quizProvider.updateQuizDate(
+          widget.classId, quizIndex, endDate!);
+      if (result != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Datdline updated')),
+        );
+        // Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error updating deadline')),
+        );
+      }
+    }
   }
 }

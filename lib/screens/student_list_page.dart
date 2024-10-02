@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/class_provider.dart';
 import '../providers/user_provider.dart';
 import '../services/class_service.dart';
+import 'homepage.dart';
 
 class StudentListPage extends StatefulWidget {
   final String classId;
@@ -40,6 +41,26 @@ class _StudentListPageState extends State<StudentListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Class Details'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              showDialog(
+                  context: context,
+                  builder: (BuildContext context) =>
+                      RenameDialog(classId: widget.classId));
+            },
+          ),
+          if (!isStudent)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () {
+                classProvider.deleteClass(widget.classId);
+                Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => const Homepage()));
+              },
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48.0),
           child: Container(
@@ -93,8 +114,16 @@ class _StudentListPageState extends State<StudentListPage> {
                             print('Rendering student: $student');
                             return ListTile(
                               leading: CircleAvatar(
-                                backgroundImage: NetworkImage(
-                                    "https://randomuser.me/api/portraits/men/${index.toString()}.jpg"),
+                                radius: 15,
+                                backgroundImage: (student["profileImageUrl"] !=
+                                        null
+                                    ? NetworkImage(student["profileImageUrl"]!)
+                                    : null),
+                                child: student["profileImageUrl"] == null
+                                    ? const Icon(
+                                        Icons.person,
+                                      )
+                                    : null,
                               ),
                               title: Text(student["name"] ?? "Unknown"),
                               subtitle: Text(student["email"] ?? "No email"),
@@ -120,5 +149,62 @@ class _StudentListPageState extends State<StudentListPage> {
         ),
       ),
     );
+  }
+}
+
+class RenameDialog extends StatefulWidget {
+  final String classId;
+
+  const RenameDialog({super.key, required this.classId});
+
+  @override
+  State<RenameDialog> createState() => _RenameDialogState();
+}
+
+class _RenameDialogState extends State<RenameDialog> {
+  final TextEditingController classNameController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ClassProvider>(builder: (context, classProvider, child) {
+      return AlertDialog(
+        title: const Text('Rename Class'),
+        content: Form(
+          key: _formKey,
+          child: TextFormField(
+            controller: classNameController,
+            decoration: const InputDecoration(
+              labelText: 'New class name',
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a class name';
+              }
+              return null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                await classProvider.renameClass(
+                    classId: widget.classId,
+                    newClassName: classNameController.text);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Rename'),
+          ),
+        ],
+      );
+    });
   }
 }

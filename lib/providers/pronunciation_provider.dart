@@ -54,6 +54,22 @@ class PronunciationProvider extends ChangeNotifier {
     return null;
   }
 
+  Future<bool> updatePronunciationDate(
+      String classId, int pronunciationIndex, DateTime endDate) async {
+    _isLoading = true;
+    notifyListeners();
+    final result = await _pronunciationService.updatePronunciationDate(
+        classId, pronunciationIndex, endDate);
+    if (result) {
+      await fetchClassPronunciations(classId);
+      _isLoading = false;
+      notifyListeners();
+    }
+    _isLoading = false;
+    notifyListeners();
+    return result;
+  }
+
   Future<void> deletePronunciation(
       String classId, int pronunciationIndex) async {
     final result = await _pronunciationService.deletePronunciation(

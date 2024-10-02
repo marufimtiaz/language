@@ -7,10 +7,12 @@ class ClassProvider with ChangeNotifier {
   List<Map<String, dynamic>> _classes = [];
   List<Map<String, dynamic>> _studentList = [];
   int _totalStudents = 0;
+  String _className = '';
   bool _isLoading = false;
 
   List<Map<String, dynamic>> get classes => _classes;
   List<Map<String, dynamic>> get studentList => _studentList;
+  String get className => _className;
   int get totalStudents => _totalStudents;
   bool get isLoading => _isLoading;
 
@@ -46,8 +48,10 @@ class ClassProvider with ChangeNotifier {
   }
 
   Future<void> joinClass(String classId) async {
+    _isLoading = true;
     try {
       await _classService.joinClass(classId);
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
       print('Error joining class: $e');
@@ -55,11 +59,43 @@ class ClassProvider with ChangeNotifier {
   }
 
   Future<void> deleteClass(String classId) async {
+    _isLoading = true;
+    notifyListeners();
     try {
       await _classService.deleteClass(classId);
+      _isLoading = false;
       notifyListeners();
+      print('Class deleted successfully');
     } catch (e) {
       print('Error deleting class: $e');
+    }
+  }
+
+  //Rename class
+  Future<void> renameClass(
+      {required String classId, required String newClassName}) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _classService.renameClass(classId, newClassName);
+      _isLoading = false;
+      notifyListeners();
+      print('Class renamed successfully');
+    } catch (e) {
+      print('Error renaming class: $e');
+    }
+  }
+
+  Future<void> getClassName(String classId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _className = (await _classService.getClassName(classId))!;
+      _isLoading = false;
+      notifyListeners();
+      print('Class name: $_className');
+    } catch (e) {
+      print('Error getting class name: $e');
     }
   }
 
@@ -88,6 +124,18 @@ class ClassProvider with ChangeNotifier {
       _studentList = [];
       _totalStudents = 0;
       notifyListeners();
+    }
+  }
+
+  Future<void> removeStudentFromClass(String classId, String studentId) async {
+    _isLoading = true;
+    try {
+      await _classService.removeStudentFromClass(classId, studentId);
+      _isLoading = false;
+      notifyListeners();
+      print('Student removed from class');
+    } catch (e) {
+      print('Error removing student from class: $e');
     }
   }
 }

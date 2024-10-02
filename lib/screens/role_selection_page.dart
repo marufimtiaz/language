@@ -5,7 +5,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:language/screens/homepage.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_check.dart';
-import '../auth/auth_service.dart';
 import '../providers/user_provider.dart';
 import '../components/selectors.dart';
 
@@ -59,6 +58,10 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    if (userProvider.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(
@@ -67,7 +70,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
           IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () async {
-                await signOutUser(context); // Call sign-out function
+                await userProvider.signOutUser(); // Call sign-out function
                 // Redirect to login page
                 Navigator.pushReplacement(
                   context,

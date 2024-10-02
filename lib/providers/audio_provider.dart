@@ -1,6 +1,7 @@
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
@@ -10,6 +11,7 @@ class AudioProvider extends ChangeNotifier {
   // Recorder
   late RecorderController _recorderController;
   bool _isRecording = false;
+  bool _doneRecording = false;
   String _recordingDuration = '00:00';
   String? _recordedFilePath;
 
@@ -23,6 +25,8 @@ class AudioProvider extends ChangeNotifier {
   late AudioPlayer _onlinePlayer;
   bool _isOnlinePlaying = false;
   bool _isOnlinePaused = false;
+  bool _isUploading = false;
+  bool _isLoading = false;
   String _onlinePlaybackDuration = '00:00';
   String? _onlineAudioUrl;
 
@@ -32,6 +36,9 @@ class AudioProvider extends ChangeNotifier {
   RecorderController get recorderController => _recorderController;
   PlayerController get offlinePlayerController => _offlinePlayerController;
 
+  bool get isLoading => _isLoading;
+  bool get isUploading => _isUploading;
+  bool get doneRecording => _doneRecording;
   bool get isRecording => _isRecording;
   bool get isOfflinePlaying => _isOfflinePlaying;
   bool get isOfflinePaused => _isOfflinePaused;
@@ -83,6 +90,9 @@ class AudioProvider extends ChangeNotifier {
   // Recording related functions
   Future<void> startRecording() async {
     try {
+      _isLoading = true; // Start loading
+      notifyListeners();
+
       final hasPermission = await _requestPermissions();
       if (!hasPermission) {
         throw Exception('Microphone permission not granted');
@@ -93,10 +103,35 @@ class AudioProvider extends ChangeNotifier {
       await _setFilePath();
       await _recorderController.record(path: _recordedFilePath);
       _isRecording = true;
+      _doneRecording = false;
+      _isLoading = false; // Stop loading after recording starts
       notifyListeners();
       _updateRecordingDuration();
     } catch (e) {
+      _isLoading = false; // Stop loading if error occurs
+      notifyListeners();
       print('Error starting recording: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> stopRecording() async {
+    try {
+      _isLoading = true; // Start loading
+      notifyListeners();
+
+      final path = await _recorderController.stop();
+      _isRecording = false;
+      _doneRecording = true;
+      if (_recordedFilePath != null) {
+        _savedRecordings.add(path!);
+      }
+      _isLoading = false; // Stop loading after recording stops
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false; // Stop loading if error occurs
+      notifyListeners();
+      print('Error stopping recording: $e');
       rethrow;
     }
   }
@@ -110,20 +145,6 @@ class AudioProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error deleting previous recordings: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> stopRecording() async {
-    try {
-      final path = await _recorderController.stop();
-      _isRecording = false;
-      if (_recordedFilePath != null) {
-        _savedRecordings.add(_recordedFilePath!);
-      }
-      notifyListeners();
-    } catch (e) {
-      print('Error stopping recording: $e');
       rethrow;
     }
   }
@@ -223,11 +244,16 @@ class AudioProvider extends ChangeNotifier {
 
   Future<void> playOnlineAudio(String url) async {
     try {
-      _onlineAudioUrl = url;
+      _isLoading = true; // Start loading
+      notifyListeners();
 
+      _onlineAudioUrl = url;
       await _onlinePlayer.play(UrlSource(url));
+
       _isOnlinePlaying = true;
       _isOnlinePaused = false;
+
+      _isLoading = false; // Stop loading when audio starts
       notifyListeners();
 
       _onlinePlayer.onDurationChanged.listen((duration) {
@@ -241,9 +267,9 @@ class AudioProvider extends ChangeNotifier {
         notifyListeners();
       });
     } catch (e) {
-      print('Error playing online audio: $e');
-      _isOnlinePlaying = false;
+      _isLoading = false; // Stop loading if error occurs
       notifyListeners();
+      print('Error playing online audio: $e');
       rethrow;
     }
   }
@@ -301,16 +327,19 @@ class AudioProvider extends ChangeNotifier {
   }
 
   // Function to upload recorded audio
-  Future<String?> uploadRecording() async {
+  Future<String?> uploadRecording(String classId) async {
     if (_recordedFilePath == null) {
       throw Exception('No recording available to upload.');
     }
 
     final file = File(_recordedFilePath!);
     final fileName =
-        'audio/${DateTime.now().millisecondsSinceEpoch}.m4a'; // Upload to 'audio' folder with timestamp
+        'audio/$classId/${DateTime.now().millisecondsSinceEpoch}.m4a'; // Upload to 'audio' folder with timestamp
 
     try {
+      _isUploading = true; // Start uploading
+      notifyListeners();
+
       final storageRef = FirebaseStorage.instance.ref().child(fileName);
       final uploadTask = storageRef.putFile(file);
 
@@ -324,10 +353,16 @@ class AudioProvider extends ChangeNotifier {
       final downloadUrl = await snapshot.ref.getDownloadURL();
 
       print('Uploaded successfully. Download URL: $downloadUrl');
-      //delete the file from local storage after uploading to Firebase
+      // Delete the file from local storage after uploading to Firebase
       await deleteAllRecordings();
+
+      _isUploading = false; // Stop uploading
+      notifyListeners();
+
       return downloadUrl;
     } catch (e) {
+      _isUploading = false; // Stop uploading if error occurs
+      notifyListeners();
       print('Error uploading file: $e');
       rethrow;
     }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../auth/auth_check.dart';
-import '../auth/auth_service.dart';
 import '../components/my_button.dart';
 import '../components/textfield.dart';
+import '../providers/user_provider.dart';
 import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -26,28 +27,74 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
+  @override
+  Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    if (userProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    Future<void> _handleLogin() async {
+      if (_formKey.currentState!.validate()) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = null;
+        });
+
+        try {
+          String? result = await userProvider.loginUserWithEmail(
+            _emailController.text,
+            _passwordController.text,
+          );
+
+          if (mounted) {
+            if (result != 'success') {
+              setState(() {
+                _errorMessage = 'Login failed. Please try again.';
+              });
+            } else {
+              print("Login successful in LoginPage");
+              // Force a rebuild of the widget tree
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AuthCheck()),
+              );
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'An error occurred. Please try again later.';
+            });
+          }
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        }
+      }
+    }
+
+    Future<void> _handleGoogleSignIn() async {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
 
       try {
-        String? result = await loginUserWithEmail(
-          _emailController.text,
-          _passwordController.text,
-          context,
-        );
+        String? result = await userProvider.signInWithGoogle();
+
+        if (!mounted) return; // Check if widget is still mounted
 
         if (mounted) {
           if (result != 'success') {
             setState(() {
-              _errorMessage = 'Login failed. Please try again.';
+              _errorMessage = 'Google Sign-In failed. Please try again.';
             });
           } else {
             print("Login successful in LoginPage");
-            // Force a rebuild of the widget tree
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const AuthCheck()),
@@ -68,49 +115,7 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
     }
-  }
 
-  Future<void> _handleGoogleSignIn() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      String? result = await signInWithGoogle(context);
-
-      if (!mounted) return; // Check if widget is still mounted
-
-      if (mounted) {
-        if (result != 'success') {
-          setState(() {
-            _errorMessage = 'Google Sign-In failed. Please try again.';
-          });
-        } else {
-          print("Login successful in LoginPage");
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AuthCheck()),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'An error occurred. Please try again later.';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     // final screenWidth = MediaQuery.of(context).size.width;
     return GestureDetector(
