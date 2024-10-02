@@ -2,7 +2,7 @@ import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:language/providers/pronunciation_provider.dart';
 import 'package:provider/provider.dart';
-import '../providers/audio_provider.dart';
+import '../../providers/audio_provider.dart';
 
 class AudioSubmitPage extends StatefulWidget {
   final String classId;

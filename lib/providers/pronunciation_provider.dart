@@ -11,8 +11,18 @@ class PronunciationProvider extends ChangeNotifier {
   String? _currentPronunciationText;
   int _currentPronunciationIndex = -1;
 
+  int _totalStudents = 0;
+  List<String> _studentIds = [];
+  List<int> _scores = [];
+  List<String> _studentAudio = [];
+  List<Map<String, dynamic>> _studentList = [];
   bool _isLoading = false;
 
+  int get totalStudents => _totalStudents;
+  List<String> get studentIds => _studentIds;
+  List<int> get scores => _scores;
+  List<String> get studentAudio => _studentAudio;
+  List<Map<String, dynamic>> get studentList => _studentList;
   bool get isLoading => _isLoading;
 
   List<String> get pronunciations => _pronunciations;
@@ -123,6 +133,52 @@ class PronunciationProvider extends ChangeNotifier {
       String classId, int pronunciationIndex) async {
     return await _pronunciationService.getPronunciationSubmissionCount(
         classId, pronunciationIndex);
+  }
+
+  Future<List<String>> getSubmissionIds(
+      String classId, int pronunciationIndex) async {
+    return await _pronunciationService.getSubmissionIds(
+        classId, pronunciationIndex);
+  }
+
+  Future<List<int>> getScores(String classId, int pronunciationIndex) async {
+    _scores =
+        await _pronunciationService.getScores(classId, pronunciationIndex);
+    return _scores;
+  }
+
+  Future<List<String>> getStudentAudio(
+      String classId, int pronunciationIndex) async {
+    _studentAudio = await _pronunciationService.getStudentAudios(
+        classId, pronunciationIndex);
+    return _studentAudio;
+  }
+
+  Future<void> setScore(String classId, int pronunciationIndex,
+      int submissionIndex, int score) async {
+    _scores[submissionIndex] = score;
+    notifyListeners();
+    await _pronunciationService.setScore(
+        classId, pronunciationIndex, submissionIndex, score);
+    getScores(classId, pronunciationIndex);
+    notifyListeners();
+  }
+
+  Future<void> getStudentList(
+      {required String classId, required int pronunciationIndex}) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _studentList = await _pronunciationService.getStudentList(
+          classId: classId, pronunciationIndex: pronunciationIndex);
+      _totalStudents = _studentList.length;
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error getting student list(provider): $e');
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   String? get currentUserId => _auth.currentUser?.uid;

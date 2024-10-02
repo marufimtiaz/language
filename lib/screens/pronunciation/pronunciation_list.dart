@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:language/screens/audio_record_page.dart';
+import 'package:language/screens/pronunciation/audio_record_page.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/audio_provider.dart';
-import '../providers/pronunciation_provider.dart';
+import '../../providers/audio_provider.dart';
+import '../../providers/pronunciation_provider.dart';
 
 class PronunciationListPage extends StatelessWidget {
   final String classId;

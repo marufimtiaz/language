@@ -66,7 +66,7 @@ class UserProvider extends ChangeNotifier {
           if (userData['profileImageUrl'] == null) {
             await _firestore.collection('users').doc(_user!.uid).update({
               'profileImageUrl':
-                  'https://firebasestorage.googleapis.com/v0/b/language-flutter.appspot.com/o/profile_images%2Fdefault.png?alt=media&token=f3660a54-12b1-4145-bb8d-f9972a00f46e',
+                  'https://firebasestorage.googleapis.com/v0/b/language-flutter.appspot.com/o/profile_images%2Fdefault.png?alt=media&token=471db6ef-440e-47c1-b96b-cb5451255192',
             });
           }
           _id = _user!.uid;
@@ -119,7 +119,7 @@ class UserProvider extends ChangeNotifier {
         'email': email,
         'role': null,
         'profileImageUrl':
-            'https://firebasestorage.googleapis.com/v0/b/language-flutter.appspot.com/o/profile_images%2Fdefault.png?alt=media&token=f3660a54-12b1-4145-bb8d-f9972a00f46e',
+            'https://firebasestorage.googleapis.com/v0/b/language-flutter.appspot.com/o/profile_images%2Fdefault.png?alt=media&token=471db6ef-440e-47c1-b96b-cb5451255192',
       });
 
       await setUser(userCredential.user);
@@ -163,7 +163,7 @@ class UserProvider extends ChangeNotifier {
           'email': userCredential.user?.email,
           'role': null,
           'profileImageUrl': userCredential.user?.photoURL ??
-              'https://firebasestorage.googleapis.com/v0/b/language-flutter.appspot.com/o/profile_images%2Fdefault.png?alt=media&token=f3660a54-12b1-4145-bb8d-f9972a00f46e',
+              'https://firebasestorage.googleapis.com/v0/b/language-flutter.appspot.com/o/profile_images%2Fdefault.png?alt=media&token=471db6ef-440e-47c1-b96b-cb5451255192',
         });
       }
 

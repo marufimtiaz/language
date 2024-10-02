@@ -4,13 +4,13 @@ import '../providers/class_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/quiz_provider.dart';
 import '../providers/pronunciation_provider.dart';
-import 'class_notification_page.dart';
-import 'pronunciation_list.dart';
-import 'pronunciation_notification_page.dart';
+import 'quiz/class_notification_page.dart';
+import 'pronunciation/pronunciation_list.dart';
+import 'pronunciation/pronunciation_notification_page.dart';
 import 'translator_page.dart';
 import 'student_list_page.dart';
-import 'create_quiz_page.dart';
-import 'add_questions.dart';
+import 'quiz/create_quiz_page.dart';
+import 'quiz/add_questions.dart';
 
 class TabbedNotificationsPage extends StatefulWidget {
   final String classId;
@@ -120,9 +120,17 @@ class _TabbedNotificationsPageState extends State<TabbedNotificationsPage>
                           QuizCreationPage(classId: widget.classId),
                     ));
                   },
-                  child: const Text(
-                    'Quiz',
-                    style: TextStyle(color: Colors.black, fontSize: 16),
+                  child: const Row(
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            'Quiz',
+                            style: TextStyle(color: Colors.black, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Divider(),
@@ -134,8 +142,17 @@ class _TabbedNotificationsPageState extends State<TabbedNotificationsPage>
                       ),
                     ));
                   },
-                  child: const Text('Pronunciation Challenge',
-                      style: TextStyle(color: Colors.black, fontSize: 16)),
+                  child: const Row(
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: Text('Pronunciation Challenge',
+                              style:
+                                  TextStyle(color: Colors.black, fontSize: 16)),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const Divider(),
                 TextButton(

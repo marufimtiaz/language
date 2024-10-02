@@ -1,33 +1,34 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:language/screens/submissionList.dart';
 import 'package:provider/provider.dart';
-import '../providers/class_provider.dart';
-import '../providers/user_provider.dart';
-import '../providers/quiz_provider.dart';
-import '../components/notice_card.dart';
-import '../utils/ui_utils.dart';
-import 'quiz_submission_page.dart';
+import '../../providers/audio_provider.dart';
+import '../../providers/class_provider.dart';
+import '../../providers/list_audio_provider.dart';
+import '../../providers/pronunciation_provider.dart';
+import '../../providers/user_provider.dart';
+import '../../components/notice_card.dart';
+import '../../utils/ui_utils.dart';
+import 'audio_submit_page.dart';
+import 'pronunciation_submission_list.dart';
 
-class ClassNoticePage extends StatefulWidget {
+class PronunciationNotificationPage extends StatefulWidget {
   final String classId;
 
-  const ClassNoticePage({Key? key, required this.classId}) : super(key: key);
+  const PronunciationNotificationPage({super.key, required this.classId});
 
   @override
-  State<ClassNoticePage> createState() => _ClassNoticePageState();
+  State<PronunciationNotificationPage> createState() =>
+      _PronunciationNotificationPageState();
 }
 
-class _ClassNoticePageState extends State<ClassNoticePage> {
+class _PronunciationNotificationPageState
+    extends State<PronunciationNotificationPage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    final quizProvider = Provider.of<QuizProvider>(context);
+    final pronunciationProvider = Provider.of<PronunciationProvider>(context);
     final classProvider = Provider.of<ClassProvider>(context);
 
     final bool isStudent = userProvider.role == "Student";
-    final String userId = userProvider.userId!;
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -35,80 +36,104 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: quizProvider.isLoading
+            child: pronunciationProvider.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : quizProvider.quizzes.isEmpty
+                : pronunciationProvider.classPronunciations.isEmpty
                     ? const Center(child: Text('No Notifications Yet'))
                     : ListView.builder(
-                        itemCount: quizProvider.quizzes.length,
+                        itemCount:
+                            pronunciationProvider.classPronunciations.length,
                         itemBuilder: (context, index) {
                           // Reverse the index for display, but keep the original for data access
                           int reversedIndex =
-                              quizProvider.quizzes.length - 1 - index;
-                          var quiz = quizProvider.quizzes[reversedIndex];
-                          bool isActive = quizProvider.isActive(quiz);
+                              pronunciationProvider.classPronunciations.length -
+                                  1 -
+                                  index;
+                          var pronunciation = pronunciationProvider
+                              .classPronunciations[reversedIndex];
+                          bool isActive =
+                              pronunciationProvider.isActive(pronunciation);
+
                           return FutureBuilder<bool>(
-                            future: quizProvider.isQuizDone(
+                            future: pronunciationProvider.isPronunciationDone(
                                 widget.classId, reversedIndex),
                             builder: (context, snapshot) {
                               bool isDone = snapshot.data ?? false;
 
                               return FutureBuilder<int>(
-                                future: quizProvider.getQuizSubmissionCount(
-                                    widget.classId, reversedIndex),
+                                future: pronunciationProvider
+                                    .getPronunciationSubmissionCount(
+                                        widget.classId, reversedIndex),
                                 builder: (context, submissionSnapshot) {
                                   int submissionCount =
                                       submissionSnapshot.data ?? 0;
 
                                   return NoticeCard(
-                                    titleText: 'Quiz ${reversedIndex + 1}',
+                                    titleText:
+                                        'Pronunciation ${reversedIndex + 1}',
                                     isActive: isActive,
                                     completionNum: submissionCount,
                                     isDone: isDone,
                                     chipText: isActive
-                                        ? 'Deadline: ${_formatDate(quiz['dateEnd'].toDate())}'
-                                        : 'Deadline Reached: ${_formatDate(quiz['dateEnd'].toDate())}',
+                                        ? 'Deadline: ${_formatDate(pronunciation['dateEnd'].toDate())}'
+                                        : 'Deadline Reached: ${_formatDate(pronunciation['dateEnd'].toDate())}',
                                     smallText:
-                                        'Created at ${_formatDate(quiz['dateCreated'].toDate())}',
+                                        'Created at ${_formatDate(pronunciation['dateCreated'].toDate())}',
                                     isStudent: isStudent,
                                     totalStudents: classProvider.totalStudents,
                                     dateChange: () {
                                       //show datepicker
-                                      _changeEndDate(quiz['dateEnd'].toDate(),
-                                          reversedIndex);
+                                      isStudent
+                                          ? null
+                                          : _changeEndDate(
+                                              pronunciation['dateEnd'].toDate(),
+                                              reversedIndex,
+                                              isActive);
                                     },
                                     onPressed: () {
                                       if (isStudent) {
                                         if (isDone) {
                                           UIUtils.showToast(
-                                              "Quiz already submitted");
+                                              "Already submitted");
                                         } else {
                                           if (isActive) {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>
-                                                    QuizSubmissionPage(
-                                                  classId: widget.classId,
-                                                  quizIndex: reversedIndex,
-                                                  studentId: userId,
+                                                    ChangeNotifierProvider<
+                                                        AudioProvider>(
+                                                  create: (context) =>
+                                                      AudioProvider(),
+                                                  child: AudioSubmitPage(
+                                                    classId: widget.classId,
+                                                    pronunciationIndex:
+                                                        reversedIndex,
+                                                  ),
                                                 ),
                                               ),
                                             );
                                           } else {
                                             UIUtils.showToast(
-                                                "Quiz deadline reached");
+                                                "Deadline reached");
                                           }
                                         }
                                       } else {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                              builder: (context) =>
-                                                  QuizDetailsPage(
+                                            builder: (context) =>
+                                                ChangeNotifierProvider<
+                                                    ListAudioProvider>(
+                                              create: (context) =>
+                                                  ListAudioProvider(),
+                                              child:
+                                                  PronunciationSubmissionList(
                                                       classId: widget.classId,
-                                                      quizIndex:
-                                                          reversedIndex)),
+                                                      pronunciationIndex:
+                                                          reversedIndex),
+                                            ),
+                                          ),
                                         );
                                       }
                                     },
@@ -149,12 +174,13 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
     return monthNames[month - 1];
   }
 
-  Future<void> _changeEndDate(DateTime date, int quizIndex) async {
+  Future<void> _changeEndDate(
+      DateTime date, int pronunciationIndex, bool isActive) async {
     DateTime? endDate;
 
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: date,
+      initialDate: isActive ? date : DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
     );
@@ -166,20 +192,14 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
               pickedDate.year, pickedDate.month, pickedDate.day, 23, 59, 59);
         },
       );
-
-      final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-
-      final result = await quizProvider.updateQuizDate(
-          widget.classId, quizIndex, endDate!);
-      if (result != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Datdline updated')),
-        );
-        // Navigator.pop(context);
+      bool result =
+          await Provider.of<PronunciationProvider>(context, listen: false)
+              .updatePronunciationDate(
+                  widget.classId, pronunciationIndex, endDate!);
+      if (result) {
+        UIUtils.showToast("Deadline updated");
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error updating deadline')),
-        );
+        UIUtils.showToast("Error updating deadline");
       }
     }
   }

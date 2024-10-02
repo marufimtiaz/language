@@ -118,7 +118,8 @@ class PronunciationService {
           pronunciationList[pronunciationIndex];
       if (pronunciation['submissions'][user.uid] != null) return false;
 
-      pronunciation['submissions'][user.uid] = studentAudio;
+      pronunciation['submissions']
+          [user.uid] = {'studentAudio': studentAudio, 'score': 0};
       await classRef.update({'pronunciationList': pronunciationList});
 
       return true;
@@ -273,6 +274,170 @@ class PronunciationService {
     } catch (e) {
       print('Error getting Pronunciation submission count: $e');
       return 0;
+    }
+  }
+
+  Future<List<String>> getSubmissionIds(
+      String classId, int pronunciationIndex) async {
+    try {
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return [];
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> pronunciationList = classData['pronunciationList'] ?? [];
+      if (pronunciationIndex < 0 ||
+          pronunciationIndex >= pronunciationList.length) return [];
+
+      Map<String, dynamic> pronunciation =
+          pronunciationList[pronunciationIndex];
+      Map<String, dynamic> submissions = pronunciation['submissions'] ?? {};
+
+      print('Submissions: $submissions');
+      return submissions.keys.toList();
+    } catch (e) {
+      print('Error getting Pronunciation submission IDs: $e');
+      return [];
+    }
+  }
+
+  Future<List<String>> getStudentAudios(
+      String classId, int pronunciationIndex) async {
+    try {
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return [];
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> pronunciationList = classData['pronunciationList'] ?? [];
+      if (pronunciationIndex < 0 ||
+          pronunciationIndex >= pronunciationList.length) return [];
+
+      Map<String, dynamic> pronunciation =
+          pronunciationList[pronunciationIndex];
+      Map<String, dynamic> submissions = pronunciation['submissions'] ?? {};
+
+      List<String> studentAudios = [];
+      for (var submission in submissions.values) {
+        studentAudios.add(submission['studentAudio']);
+      }
+
+      return studentAudios;
+    } catch (e) {
+      print('Error getting Pronunciation student audios: $e');
+      return [];
+    }
+  }
+
+  Future<List<int>> getScores(String classId, int pronunciationIndex) async {
+    try {
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return [];
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> pronunciationList = classData['pronunciationList'] ?? [];
+      if (pronunciationIndex < 0 ||
+          pronunciationIndex >= pronunciationList.length) return [];
+
+      Map<String, dynamic> pronunciation =
+          pronunciationList[pronunciationIndex];
+      Map<String, dynamic> submissions = pronunciation['submissions'] ?? {};
+
+      List<int> scores = [];
+      for (var submission in submissions.values) {
+        scores.add(submission['score'] ?? 0);
+      }
+
+      return scores;
+    } catch (e) {
+      print('Error getting Pronunciation scores: $e');
+      return [];
+    }
+  }
+
+  Future<void> setScore(String classId, int pronunciationIndex,
+      int submissionsIndex, int score) async {
+    var user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      DocumentReference classRef =
+          _firestore.collection('classes').doc(classId);
+      DocumentSnapshot classDoc = await classRef.get();
+      if (!classDoc.exists) return;
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> pronunciationList = classData['pronunciationList'] ?? [];
+      if (pronunciationIndex < 0 ||
+          pronunciationIndex >= pronunciationList.length) return;
+
+      Map<String, dynamic> pronunciation =
+          pronunciationList[pronunciationIndex];
+      Map<String, dynamic> submissions = pronunciation['submissions'] ?? {};
+
+      List<String> studentIds = submissions.keys.toList();
+      if (submissionsIndex < 0 || submissionsIndex >= studentIds.length) return;
+
+      String studentId = studentIds[submissionsIndex];
+      submissions[studentId]['score'] = score;
+      await classRef.update({'pronunciationList': pronunciationList});
+    } catch (e) {
+      print('Error setting Pronunciation score: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getStudentList(
+      {required String classId, required int pronunciationIndex}) async {
+    try {
+      DocumentSnapshot classDoc =
+          await _firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return [];
+
+      Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+      List<dynamic> pronunciationList = classData['pronunciationList'] ?? [];
+      if (pronunciationIndex < 0 ||
+          pronunciationIndex >= pronunciationList.length) return [];
+
+      Map<String, dynamic> pronunciation =
+          pronunciationList[pronunciationIndex];
+      Map<String, dynamic> submissions = pronunciation['submissions'] ?? {};
+
+      List<String> studentIds = submissions.keys.toList();
+      QuerySnapshot? studentDocs = await studentDetails(studentIds);
+
+      return studentDocs!.docs.map((doc) {
+        var data = doc.data() as Map<String, dynamic>;
+        return data;
+      }).toList();
+    } catch (e) {
+      print('Error getting student list: $e');
+      return [];
+    }
+  }
+
+  //get user details from studentIds array
+  Future<QuerySnapshot?> studentDetails(List<dynamic> studentIds) async {
+    try {
+      print('Fetching students: $studentIds');
+
+      if (studentIds.isEmpty) {
+        print('No students submitted');
+        return null;
+      }
+
+      // Now fetch the user documents for these student IDs
+      QuerySnapshot studentDocs = await _firestore
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: studentIds)
+          .get();
+
+      print('Fetched ${studentDocs.docs.length} student documents');
+
+      return studentDocs;
+    } catch (e) {
+      print('Error in getStudentDetails: $e');
+      rethrow;
     }
   }
 }

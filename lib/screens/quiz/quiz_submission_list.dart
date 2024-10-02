@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:language/providers/quiz_provider.dart';
 import 'package:provider/provider.dart';
-import '../providers/class_provider.dart';
-import '../providers/user_provider.dart';
-import '../services/class_service.dart';
-import 'homepage.dart';
 
 class QuizDetailsPage extends StatefulWidget {
   final String classId;
@@ -32,15 +27,25 @@ class _QuizDetailsPageState extends State<QuizDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final primaryColor = colorScheme.primary;
-    final onPrimaryColor = colorScheme.onPrimary;
     final quizProvider = Provider.of<QuizProvider>(context);
+    var quiz = quizProvider.quizzes[widget.quizIndex];
+    bool isActive = quizProvider.isActive(quiz);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quiz Details'),
         actions: [
+          IconButton(
+            onPressed: () {
+              //show datepicker
+              _changeEndDate(
+                quiz['dateEnd'].toDate(),
+                widget.quizIndex,
+                isActive,
+              );
+            },
+            icon: const Icon(Icons.edit_calendar),
+          ),
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () {
@@ -116,7 +121,8 @@ class _QuizDetailsPageState extends State<QuizDetailsPage> {
       return const Center(
           child: Text("No students have submitted this quiz yet."));
     } else {
-      return ListView.builder(
+      return ListView.separated(
+        separatorBuilder: (context, index) => const Divider(),
         itemCount: quizProvider.studentList.length,
         itemBuilder: (context, index) {
           var student = quizProvider.studentList[index];
@@ -141,6 +147,42 @@ class _QuizDetailsPageState extends State<QuizDetailsPage> {
           );
         },
       );
+    }
+  }
+
+  Future<void> _changeEndDate(
+      DateTime date, int quizIndex, bool isActive) async {
+    DateTime? endDate;
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: isActive ? date : DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+
+    if (pickedDate != null) {
+      setState(
+        () {
+          endDate = DateTime(
+              pickedDate.year, pickedDate.month, pickedDate.day, 23, 59, 59);
+        },
+      );
+
+      final quizProvider = Provider.of<QuizProvider>(context, listen: false);
+
+      final result = await quizProvider.updateQuizDate(
+          widget.classId, quizIndex, endDate!);
+      if (result) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Deadline updated')),
+        );
+        // Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error updating deadline')),
+        );
+      }
     }
   }
 }
