@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:language/utils/ui_utils.dart';
 import '../services/pronunciation_service.dart';
 
 class PronunciationProvider extends ChangeNotifier {
@@ -156,10 +157,12 @@ class PronunciationProvider extends ChangeNotifier {
 
   Future<void> setScore(String classId, int pronunciationIndex,
       int submissionIndex, int score) async {
+    UIUtils.showToast(msg: 'Updating Score');
     _scores[submissionIndex] = score;
     notifyListeners();
     await _pronunciationService.setScore(
         classId, pronunciationIndex, submissionIndex, score);
+    UIUtils.showToast(msg: 'Score Updated');
     getScores(classId, pronunciationIndex);
     notifyListeners();
   }
