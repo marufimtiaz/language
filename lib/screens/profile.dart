@@ -20,7 +20,7 @@ class _ProfileManagementPageState extends State<ProfileManagementPage> {
   final _oldPasswordController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String? _selectedRole;
+  // String? _selectedRole;
   File? _imageFile;
 
   @override
@@ -30,7 +30,7 @@ class _ProfileManagementPageState extends State<ProfileManagementPage> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       _nameController.text = userProvider.name ?? '';
       // Assuming email is displayed elsewhere or can be fetched directly from provider
-      _selectedRole = userProvider.role;
+      // _selectedRole = userProvider.role;
     });
   }
 
@@ -88,7 +88,7 @@ class _ProfileManagementPageState extends State<ProfileManagementPage> {
                       GestureDetector(
                         onTap: _pickImage,
                         child: CircleAvatar(
-                          radius: 50,
+                          radius: 80,
                           backgroundImage: _imageFile != null
                               ? FileImage(_imageFile!)
                               : (userProvider.profileImageUrl != null
@@ -100,7 +100,19 @@ class _ProfileManagementPageState extends State<ProfileManagementPage> {
                               : null,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
+                      // Text(userProvider.role ?? '',
+                      //     style: const TextStyle(fontSize: 16)),
+                      // const SizedBox(height: 20),
+                      TextFormField(
+                        readOnly: true,
+                        initialValue: userProvider.email,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          enabled: false,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(labelText: 'Name'),
@@ -112,15 +124,7 @@ class _ProfileManagementPageState extends State<ProfileManagementPage> {
                         },
                       ),
                       const SizedBox(height: 10),
-                      TextFormField(
-                        readOnly: true,
-                        initialValue: userProvider.email,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          enabled: false,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
+
                       TextFormField(
                         controller: _passwordController,
                         decoration: const InputDecoration(
@@ -173,26 +177,26 @@ class _ProfileManagementPageState extends State<ProfileManagementPage> {
                             return null;
                           },
                         ),
-                      const SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        value: _selectedRole,
-                        decoration: const InputDecoration(labelText: 'Role'),
-                        items: ['Student', 'Teacher']
-                            .map((role) => DropdownMenuItem(
-                                value: role, child: Text(role)))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedRole = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select a role';
-                          }
-                          return null;
-                        },
-                      ),
+                      // const SizedBox(height: 10),
+                      // DropdownButtonFormField<String>(
+                      //   value: _selectedRole,
+                      //   decoration: const InputDecoration(labelText: 'Role'),
+                      //   items: ['Student', 'Teacher']
+                      //       .map((role) => DropdownMenuItem(
+                      //           value: role, child: Text(role)))
+                      //       .toList(),
+                      //   onChanged: (value) {
+                      //     setState(() {
+                      //       _selectedRole = value;
+                      //     });
+                      //   },
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return 'Please select a role';
+                      //     }
+                      //     return null;
+                      //   },
+                      // ),
                       const SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: userProvider.isLoading
@@ -209,7 +213,7 @@ class _ProfileManagementPageState extends State<ProfileManagementPage> {
                                         _passwordController.text.isNotEmpty
                                             ? _passwordController.text
                                             : null,
-                                    newRole: _selectedRole,
+                                    // newRole: _selectedRole,
                                     newProfileImage: _imageFile,
                                   );
                                   // Optionally, clear password fields
