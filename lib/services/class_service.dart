@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:uuid/uuid.dart';
 
 import '../utils/ui_utils.dart';
@@ -38,8 +37,8 @@ class ClassService {
 
   Future<void> deleteClass(String classId) async {
     try {
-      final FirebaseStorage _storage = FirebaseStorage.instance;
-      await _storage.ref('audio/$classId/').listAll().then((result) {
+      final FirebaseStorage storage = FirebaseStorage.instance;
+      await storage.ref('audio/$classId/').listAll().then((result) {
         for (var file in result.items) {
           file.delete();
         }

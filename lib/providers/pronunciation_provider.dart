@@ -12,7 +12,7 @@ class PronunciationProvider extends ChangeNotifier {
   int _currentPronunciationIndex = -1;
 
   int _totalStudents = 0;
-  List<String> _studentIds = [];
+  final List<String> _studentIds = [];
   List<int> _scores = [];
   List<String> _studentAudio = [];
   List<Map<String, dynamic>> _studentList = [];

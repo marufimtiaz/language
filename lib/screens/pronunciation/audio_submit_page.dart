@@ -294,10 +294,10 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
       isSubmitting = true;
     });
     final audioProvider = Provider.of<AudioProvider>(context, listen: false);
-    final _audioUrl = await audioProvider.uploadRecording(widget.classId);
+    final audioUrl0 = await audioProvider.uploadRecording(widget.classId);
 
-    if (_audioUrl != null) {
-      String audioUrl = _audioUrl;
+    if (audioUrl0 != null) {
+      String audioUrl = audioUrl0;
       final pronunciationProvider =
           Provider.of<PronunciationProvider>(context, listen: false);
       final result = await pronunciationProvider.submitPronunciation(

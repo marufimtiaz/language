@@ -32,12 +32,14 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Question added successfully!')),
+          const SnackBar(content: Text('Question added successfully!')),
         );
 
         // Clear the form
         _questionController.clear();
-        _optionControllers.forEach((controller) => controller.clear());
+        for (var controller in _optionControllers) {
+          controller.clear();
+        }
         setState(() {
           _correctAnswerIndex = 0;
         });
@@ -56,9 +58,9 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
-        appBar: AppBar(title: Text('Add New Question')),
+        appBar: AppBar(title: const Text('Add New Question')),
         body: SingleChildScrollView(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -66,14 +68,14 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
               children: [
                 TextFormField(
                   controller: _questionController,
-                  decoration: InputDecoration(labelText: 'Question'),
+                  decoration: const InputDecoration(labelText: 'Question'),
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter a question' : null,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 ...List.generate(3, (index) {
                   return Padding(
-                    padding: EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 8),
                     child: TextFormField(
                       controller: _optionControllers[index],
                       decoration:
@@ -83,7 +85,7 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
                     ),
                   );
                 }),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
                   value: _correctAnswerIndex,
                   items: List.generate(3, (index) {
@@ -97,12 +99,12 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
                       _correctAnswerIndex = value!;
                     });
                   },
-                  decoration: InputDecoration(labelText: 'Correct Answer'),
+                  decoration: const InputDecoration(labelText: 'Correct Answer'),
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _submitQuestion,
-                  child: Text('Add Question'),
+                  child: const Text('Add Question'),
                 ),
               ],
             ),
@@ -115,7 +117,9 @@ class _AddQuestionPageState extends State<AddQuestionPage> {
   @override
   void dispose() {
     _questionController.dispose();
-    _optionControllers.forEach((controller) => controller.dispose());
+    for (var controller in _optionControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 }

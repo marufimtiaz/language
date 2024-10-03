@@ -72,10 +72,10 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
   }
 
   Widget _buildAudioVisualizer(AudioProvider audioProvider) {
-    final width = 300.0; // Adjust as needed
+    const width = 300.0; // Adjust as needed
     if (audioProvider.isRecording) {
       return AudioWaveforms(
-        size: Size(width, 100),
+        size: const Size(width, 100),
         recorderController: audioProvider.recorderController,
         waveStyle: WaveStyle(
           waveColor: Colors.green.shade700,
@@ -85,7 +85,7 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
       );
     } else if (audioProvider.isOfflinePlaying) {
       return AudioFileWaveforms(
-        size: Size(width, 100),
+        size: const Size(width, 100),
         playerController: audioProvider.offlinePlayerController,
         enableSeekGesture: true,
         playerWaveStyle: PlayerWaveStyle(
@@ -283,10 +283,10 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
         },
       );
       final audioProvider = Provider.of<AudioProvider>(context, listen: false);
-      final _audioUrl = await audioProvider.uploadRecording(widget.classId);
+      final audioUrl0 = await audioProvider.uploadRecording(widget.classId);
 
-      if (_audioUrl != null) {
-        String audioUrl = _audioUrl;
+      if (audioUrl0 != null) {
+        String audioUrl = audioUrl0;
         final pronunciationProvider =
             Provider.of<PronunciationProvider>(context, listen: false);
         final result = await pronunciationProvider.createPronunciation(

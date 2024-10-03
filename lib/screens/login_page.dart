@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    Future<void> _handleLogin() async {
+    Future<void> handleLogin() async {
       if (_formKey.currentState!.validate()) {
         setState(() {
           _isLoading = true;
@@ -77,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
 
-    Future<void> _handleGoogleSignIn() async {
+    Future<void> handleGoogleSignIn() async {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
@@ -194,7 +194,7 @@ class _LoginPageState extends State<LoginPage> {
                     label: 'Sign In',
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     textColor: Colors.white,
-                    onPressed: _handleLogin,
+                    onPressed: handleLogin,
                   ),
                   SizedBox(height: screenHeight * 0.02),
                   Row(
@@ -237,7 +237,7 @@ class _LoginPageState extends State<LoginPage> {
                         borderColor: Colors.grey,
                         onPressed:
                             // Handle Google sign in button press
-                            _handleGoogleSignIn,
+                            handleGoogleSignIn,
                       ),
                       SizedBox(height: screenHeight * 0.02),
                       CustomButton(
@@ -248,7 +248,7 @@ class _LoginPageState extends State<LoginPage> {
                         borderColor: Colors.grey,
                         onPressed:
                             // Handle Apple sign in button press
-                            _handleGoogleSignIn,
+                            handleGoogleSignIn,
                       ),
                     ],
                   ),

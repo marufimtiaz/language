@@ -6,7 +6,7 @@ import 'package:language/components/question_card.dart';
 class QuizCreationPage extends StatefulWidget {
   final String classId;
 
-  const QuizCreationPage({Key? key, required this.classId}) : super(key: key);
+  const QuizCreationPage({super.key, required this.classId});
 
   @override
   _QuizCreationPageState createState() => _QuizCreationPageState();

@@ -35,7 +35,7 @@ class _SignupPageState extends State<SignupPage> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
 
-    Future<void> _signup() async {
+    Future<void> signup() async {
       if (_formKey.currentState!.validate()) {
         setState(() {
           _isLoading = true;
@@ -74,7 +74,7 @@ class _SignupPageState extends State<SignupPage> {
       }
     }
 
-    Future<void> _handleGoogleSignIn() async {
+    Future<void> handleGoogleSignIn() async {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
@@ -199,7 +199,7 @@ class _SignupPageState extends State<SignupPage> {
                   label: 'Sign Up',
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   textColor: Colors.white,
-                  onPressed: _signup,
+                  onPressed: signup,
                 ),
                 SizedBox(height: screenHeight * 0.02),
                 SizedBox(height: screenHeight * 0.02),
@@ -240,7 +240,7 @@ class _SignupPageState extends State<SignupPage> {
                       borderColor: Colors.grey,
                       onPressed:
                           // Handle Google sign in button press
-                          _handleGoogleSignIn,
+                          handleGoogleSignIn,
                     ),
                     SizedBox(height: screenHeight * 0.02),
                     CustomButton(
@@ -252,7 +252,7 @@ class _SignupPageState extends State<SignupPage> {
                       borderColor: Colors.grey,
                       onPressed:
                           // Handle Apple sign in button press
-                          _handleGoogleSignIn,
+                          handleGoogleSignIn,
                     ),
                   ],
                 ),

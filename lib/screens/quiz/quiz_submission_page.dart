@@ -187,7 +187,7 @@ class QuizSubmissionPageState extends State<QuizSubmissionPage> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
             const Spacer(),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

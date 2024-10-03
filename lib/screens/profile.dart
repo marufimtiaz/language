@@ -7,6 +7,8 @@ import '../auth/auth_check.dart';
 import '../providers/user_provider.dart';
 
 class ProfileManagementPage extends StatefulWidget {
+  const ProfileManagementPage({super.key});
+
   @override
   _ProfileManagementPageState createState() => _ProfileManagementPageState();
 }

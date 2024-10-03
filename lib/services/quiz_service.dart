@@ -230,7 +230,7 @@ class QuizService {
       List<dynamic> questionSet = questionData['questionSet'] as List<dynamic>;
 
       List<Map<String, dynamic>> questions = [];
-      questionIds.forEach((id) {
+      for (var id in questionIds) {
         if (id < questionSet.length) {
           var question = questionSet[id];
           questions.add({
@@ -239,7 +239,7 @@ class QuizService {
             'answer': question['answer'] as int
           });
         }
-      });
+      }
 
       return questions;
     } catch (e) {
