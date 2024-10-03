@@ -6,16 +6,16 @@ import 'package:language/components/question_card.dart';
 class QuizCreationPage extends StatefulWidget {
   final String classId;
 
-  const QuizCreationPage({super.key, required this.classId});
+  const QuizCreationPage({Key? key, required this.classId}) : super(key: key);
 
   @override
-  State<QuizCreationPage> createState() => _QuizCreationPageState();
+  _QuizCreationPageState createState() => _QuizCreationPageState();
 }
 
 class _QuizCreationPageState extends State<QuizCreationPage> {
-  List<Map<String, dynamic>>? questions;
-  List<int> selectedQuestionIndices = [];
-  DateTime? endDate;
+  List<Map<String, dynamic>> _questions = [];
+  final Set<int> _selectedQuestionIndices = {};
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -24,25 +24,32 @@ class _QuizCreationPageState extends State<QuizCreationPage> {
   }
 
   Future<void> _fetchQuestions() async {
-    final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-    final fetchedQuestions = await quizProvider.fetchQuestions();
-    setState(() {
-      questions = fetchedQuestions;
-    });
+    setState(() => _isLoading = true);
+    try {
+      final quizProvider = context.read<QuizProvider>();
+      final fetchedQuestions = await quizProvider.fetchQuestions();
+      setState(() {
+        _questions = fetchedQuestions;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching questions: $e');
+      setState(() => _isLoading = false);
+    }
   }
 
   void _toggleQuestionSelection(int index) {
     setState(() {
-      if (selectedQuestionIndices.contains(index)) {
-        selectedQuestionIndices.remove(index);
+      if (_selectedQuestionIndices.contains(index)) {
+        _selectedQuestionIndices.remove(index);
       } else {
-        selectedQuestionIndices.add(index);
+        _selectedQuestionIndices.add(index);
       }
     });
   }
 
-  Future<void> _pickEndDate() async {
-    if (selectedQuestionIndices.isEmpty) {
+  Future<void> _createQuiz(BuildContext context) async {
+    if (_selectedQuestionIndices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select questions first')),
       );
@@ -57,25 +64,37 @@ class _QuizCreationPageState extends State<QuizCreationPage> {
     );
 
     if (pickedDate != null) {
-      setState(
-        () {
-          endDate = DateTime(
-              pickedDate.year, pickedDate.month, pickedDate.day, 23, 59, 59);
-        },
+      final endDate = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        23,
+        59,
+        59,
       );
-
-      final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-
-      final result = await quizProvider.createQuiz(
-          widget.classId, selectedQuestionIndices, endDate!);
-      if (result != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Quiz created successfully')),
+      setState(() => _isLoading = true);
+      try {
+        final quizProvider = context.read<QuizProvider>();
+        final result = await quizProvider.createQuiz(
+          widget.classId,
+          _selectedQuestionIndices.toList(),
+          endDate,
         );
-        Navigator.pop(context);
-      } else {
+
+        if (result != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Quiz created successfully')),
+          );
+          setState(() => _isLoading = false);
+          Navigator.pop(context);
+        } else {
+          setState(() => _isLoading = false);
+          throw Exception('Failed to create quiz');
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error creating quiz')),
+          SnackBar(content: Text('Error creating quiz: $e')),
         );
       }
     }
@@ -87,30 +106,24 @@ class _QuizCreationPageState extends State<QuizCreationPage> {
       appBar: AppBar(
         title: const Text('Create Quiz'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: questions == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: questions!.length,
-                      itemBuilder: (context, index) {
-                        final question = questions![index];
-                        return QuestionCard(
-                          questionText: question['questionText'] as String,
-                          isSelected: selectedQuestionIndices.contains(index),
-                          onTap: () => _toggleQuestionSelection(index),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _questions.isEmpty
+              ? const Center(child: Text('No questions available'))
+              : ListView.builder(
+                  itemCount: _questions.length,
+                  itemBuilder: (context, index) {
+                    final question = _questions[index];
+                    return QuestionCard(
+                      questionText: question['questionText'] as String? ??
+                          'Unknown question',
+                      isSelected: _selectedQuestionIndices.contains(index),
+                      onTap: () => _toggleQuestionSelection(index),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _pickEndDate,
+        onPressed: () => _createQuiz(context),
         label: const Text('Create Quiz'),
         icon: const Icon(Icons.add),
       ),

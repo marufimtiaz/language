@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../auth/auth_check.dart';
 import '../providers/user_provider.dart';
 import '../components/selectors.dart';
+import '../utils/ui_utils.dart';
 
 class RoleSelectionPage extends StatefulWidget {
   const RoleSelectionPage({super.key});
@@ -46,13 +47,13 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
             MaterialPageRoute(builder: (context) => const Homepage()),
           );
         } catch (e) {
-          Fluttertoast.showToast(msg: "Error updating role: $e");
+          UIUtils.showToast(msg: "Error updating role: $e");
         }
       } else {
-        Fluttertoast.showToast(msg: "Error: No user found");
+        UIUtils.showToast(msg: "Error: No user found");
       }
     } else {
-      Fluttertoast.showToast(msg: "Please select a role");
+      UIUtils.showToast(msg: "Please select a role");
     }
   }
 

@@ -51,7 +51,7 @@ class _SignupPageState extends State<SignupPage> {
 
           if (result != 'success') {
             setState(() {
-              _errorMessage = 'Signup failed. Please try again.';
+              _errorMessage = result;
             });
           } else {
             print("Login successful in LoginPage");
@@ -88,7 +88,7 @@ class _SignupPageState extends State<SignupPage> {
         if (mounted) {
           if (result != 'success') {
             setState(() {
-              _errorMessage = 'Google Sign-In failed. Please try again.';
+              _errorMessage = result;
             });
           } else {
             print("Login successful in LoginPage");

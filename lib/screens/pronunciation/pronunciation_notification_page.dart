@@ -125,7 +125,7 @@ class _PronunciationNotificationPageState
                                             );
                                           } else {
                                             UIUtils.showToast(
-                                                "Deadline reached");
+                                                msg: "Deadline reached");
                                           }
                                         }
                                       } else {
@@ -207,9 +207,9 @@ class _PronunciationNotificationPageState
               .updatePronunciationDate(
                   widget.classId, pronunciationIndex, endDate!);
       if (result) {
-        UIUtils.showToast("Deadline updated");
+        UIUtils.showToast(msg: "Deadline updated");
       } else {
-        UIUtils.showToast("Error updating deadline");
+        UIUtils.showToast(msg: "Error updating deadline");
       }
     }
   }

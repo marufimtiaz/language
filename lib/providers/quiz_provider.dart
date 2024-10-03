@@ -54,14 +54,20 @@ class QuizProvider with ChangeNotifier {
 
   Future<String?> createQuiz(
       String classId, List<int> questionIds, DateTime endDate) async {
+    _isLoading = true;
+    notifyListeners();
     try {
       String? result =
           await _quizService.createQuiz(classId, questionIds, endDate);
       if (result != null) {
         await fetchQuizList(classId);
       }
+      _isLoading = false;
+      notifyListeners();
       return result;
     } catch (e) {
+      _isLoading = false;
+      notifyListeners();
       print('Error creating quiz: $e');
       return null;
     }

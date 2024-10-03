@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class UIUtils {
-  static void showToast(String message) {
+  static void showToast({required String msg}) {
     Fluttertoast.showToast(
-        msg: message,
+        msg: msg,
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
         timeInSecForIosWeb: 1,

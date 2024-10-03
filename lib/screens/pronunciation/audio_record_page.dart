@@ -8,6 +8,7 @@ import '../../providers/audio_provider.dart';
 class AudioRecordingPage extends StatefulWidget {
   final String classId;
   final int pronunciationIndex;
+
   const AudioRecordingPage(
       {super.key, required this.classId, required this.pronunciationIndex});
 
@@ -17,6 +18,7 @@ class AudioRecordingPage extends StatefulWidget {
 
 class _AudioRecordingPageState extends State<AudioRecordingPage> {
   DateTime? endDate;
+  bool isCreating = false;
   @override
   void initState() {
     super.initState();
@@ -115,47 +117,54 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
   Widget _buildControlButtons(
       BuildContext context, AudioProvider audioProvider) {
     print(audioProvider.savedRecordings);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (!audioProvider.isRecording &&
-            audioProvider.savedRecordings.isNotEmpty)
-          Row(
-            children: [
-              if (audioProvider.doneRecording)
-                _buildCircularButton(
-                  icon: audioProvider.isOfflinePlaying
-                      ? (audioProvider.isOfflinePaused
-                          ? Icons.play_arrow
-                          : Icons.pause)
-                      : Icons.play_arrow,
-                  onPressed: () => _togglePlayback(context, audioProvider),
-                ),
-              if (audioProvider.isOfflinePlaying)
-                _buildCircularButton(
-                  icon: Icons.stop,
-                  onPressed: () => _stopPlayback(context, audioProvider),
-                ),
-            ],
-          ),
-        if (!audioProvider.isRecording && !audioProvider.isOfflinePlaying)
-          _buildCircularButton(
-            icon: Icons.mic,
-            onPressed: () => _startRecording(context, audioProvider),
-          ),
-        if (audioProvider.isRecording)
-          _buildCircularButton(
-            icon: Icons.stop,
-            onPressed: () => _stopRecording(context, audioProvider),
-          ),
-      ],
-    );
+    if (isCreating) {
+      return const Center(
+        child:
+            Text('Creating Pronunciation...', style: TextStyle(fontSize: 20)),
+      );
+    } else {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!audioProvider.isRecording &&
+              audioProvider.savedRecordings.isNotEmpty)
+            Row(
+              children: [
+                if (audioProvider.doneRecording)
+                  _buildCircularButton(
+                    icon: audioProvider.isOfflinePlaying
+                        ? (audioProvider.isOfflinePaused
+                            ? Icons.play_arrow
+                            : Icons.pause)
+                        : Icons.play_arrow,
+                    onPressed: () => _togglePlayback(context, audioProvider),
+                  ),
+                if (audioProvider.isOfflinePlaying)
+                  _buildCircularButton(
+                    icon: Icons.stop,
+                    onPressed: () => _stopPlayback(context, audioProvider),
+                  ),
+              ],
+            ),
+          if (!audioProvider.isRecording && !audioProvider.isOfflinePlaying)
+            _buildCircularButton(
+              icon: Icons.mic,
+              onPressed: () => _startRecording(context, audioProvider),
+            ),
+          if (audioProvider.isRecording)
+            _buildCircularButton(
+              icon: Icons.stop,
+              onPressed: () => _stopRecording(context, audioProvider),
+            ),
+        ],
+      );
+    }
   }
 
   Widget _buildUploadButton(BuildContext context, AudioProvider audioProvider) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: !audioProvider.doneRecording
+      child: !audioProvider.doneRecording || audioProvider.isRecording
           ? const SizedBox()
           : FilledButton.tonal(
               style: FilledButton.styleFrom(
@@ -257,6 +266,9 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
   }
 
   Future<void> _pickEndDate() async {
+    setState(() {
+      isCreating = true;
+    });
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -283,11 +295,18 @@ class _AudioRecordingPageState extends State<AudioRecordingPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Pronunciation created successfully')),
           );
+          setState(() {
+            isCreating = false;
+          });
+          Navigator.pop(context);
           Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Error creating pronunciation')),
           );
+          setState(() {
+            isCreating = false;
+          });
         }
       }
     }

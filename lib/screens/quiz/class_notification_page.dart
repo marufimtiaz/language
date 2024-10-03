@@ -107,7 +107,7 @@ class _ClassNoticePageState extends State<ClassNoticePage> {
                                             );
                                           } else {
                                             UIUtils.showToast(
-                                                "Quiz deadline reached");
+                                                msg: "Quiz deadline reached");
                                           }
                                         }
                                       } else {

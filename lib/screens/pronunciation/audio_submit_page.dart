@@ -21,6 +21,7 @@ class AudioSubmitPage extends StatefulWidget {
 class _AudioSubmitPageState extends State<AudioSubmitPage> {
   String? teacherAudioUrl;
   String? pronunciationText;
+  bool isSubmitting = false;
 
   @override
   void initState() {
@@ -108,24 +109,26 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
                     style: const TextStyle(fontSize: 18),
                   ),
                   const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: _buildCircularButton(
-                      icon: audioProvider.isOnlinePlaying
-                          ? (audioProvider.isOnlinePaused
-                              ? Icons.play_arrow
-                              : Icons.pause)
-                          : Icons.play_arrow,
-                      onPressed: teacherAudioUrl != null
-                          ? () => audioProvider.isOnlinePlaying
-                              ? (audioProvider.isOnlinePaused
-                                  ? audioProvider
-                                      .playOnlineAudio(teacherAudioUrl!)
-                                  : audioProvider.pauseOnlinePlayback())
-                              : audioProvider.playOnlineAudio(teacherAudioUrl!)
-                          : () {},
+                  if (!isSubmitting)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: _buildCircularButton(
+                        icon: audioProvider.isOnlinePlaying
+                            ? (audioProvider.isOnlinePaused
+                                ? Icons.play_arrow
+                                : Icons.pause)
+                            : Icons.play_arrow,
+                        onPressed: teacherAudioUrl != null
+                            ? () => audioProvider.isOnlinePlaying
+                                ? (audioProvider.isOnlinePaused
+                                    ? audioProvider
+                                        .playOnlineAudio(teacherAudioUrl!)
+                                    : audioProvider.pauseOnlinePlayback())
+                                : audioProvider
+                                    .playOnlineAudio(teacherAudioUrl!)
+                            : () {},
+                      ),
                     ),
-                  ),
                 ],
               ),
       ),
@@ -184,41 +187,48 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
 
   Widget _buildControlButtons(
       BuildContext context, AudioProvider audioProvider) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (!audioProvider.isRecording &&
-            audioProvider.savedRecordings.isNotEmpty)
-          Row(
-            children: [
-              if (audioProvider.doneRecording)
-                _buildCircularButton(
-                  icon: audioProvider.isOfflinePlaying
-                      ? (audioProvider.isOfflinePaused
-                          ? Icons.play_arrow
-                          : Icons.pause)
-                      : Icons.play_arrow,
-                  onPressed: () => audioProvider.toggleOfflinePlayback(),
-                ),
-              if (audioProvider.isOfflinePlaying)
-                _buildCircularButton(
-                  icon: Icons.stop,
-                  onPressed: () => audioProvider.stopOfflinePlayback(),
-                ),
-            ],
-          ),
-        if (!audioProvider.isRecording && !audioProvider.isOfflinePlaying)
-          _buildCircularButton(
-            icon: Icons.mic,
-            onPressed: () => _startRecording(context, audioProvider),
-          ),
-        if (audioProvider.isRecording)
-          _buildCircularButton(
-            icon: Icons.stop,
-            onPressed: () => _stopRecording(context, audioProvider),
-          ),
-      ],
-    );
+    if (isSubmitting) {
+      return const Center(
+        child:
+            Text('Submitting Pronunciation...', style: TextStyle(fontSize: 20)),
+      );
+    } else {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!audioProvider.isRecording &&
+              audioProvider.savedRecordings.isNotEmpty)
+            Row(
+              children: [
+                if (audioProvider.doneRecording)
+                  _buildCircularButton(
+                    icon: audioProvider.isOfflinePlaying
+                        ? (audioProvider.isOfflinePaused
+                            ? Icons.play_arrow
+                            : Icons.pause)
+                        : Icons.play_arrow,
+                    onPressed: () => audioProvider.toggleOfflinePlayback(),
+                  ),
+                if (audioProvider.isOfflinePlaying)
+                  _buildCircularButton(
+                    icon: Icons.stop,
+                    onPressed: () => audioProvider.stopOfflinePlayback(),
+                  ),
+              ],
+            ),
+          if (!audioProvider.isRecording && !audioProvider.isOfflinePlaying)
+            _buildCircularButton(
+              icon: Icons.mic,
+              onPressed: () => _startRecording(context, audioProvider),
+            ),
+          if (audioProvider.isRecording)
+            _buildCircularButton(
+              icon: Icons.stop,
+              onPressed: () => _stopRecording(context, audioProvider),
+            ),
+        ],
+      );
+    }
   }
 
   Widget _buildUploadButton(BuildContext context, AudioProvider audioProvider) {
@@ -280,6 +290,9 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
   }
 
   Future<void> _studentSubmit() async {
+    setState(() {
+      isSubmitting = true;
+    });
     final audioProvider = Provider.of<AudioProvider>(context, listen: false);
     final _audioUrl = await audioProvider.uploadRecording(widget.classId);
 
@@ -293,11 +306,17 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pronunciation submitted successfully')),
         );
+        setState(() {
+          isSubmitting = false;
+        });
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error submitting pronunciation')),
         );
+        setState(() {
+          isSubmitting = false;
+        });
       }
     }
   }

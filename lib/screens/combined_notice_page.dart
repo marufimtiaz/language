@@ -114,6 +114,7 @@ class _TabbedNotificationsPageState extends State<TabbedNotificationsPage>
               children: [
                 TextButton(
                   onPressed: () {
+                    Navigator.pop(context);
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (context) =>
                           QuizCreationPage(classId: widget.classId),
@@ -135,6 +136,7 @@ class _TabbedNotificationsPageState extends State<TabbedNotificationsPage>
                 const Divider(),
                 TextButton(
                   onPressed: () {
+                    Navigator.pop(context);
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (context) => PronunciationListPage(
                         classId: widget.classId,

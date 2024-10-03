@@ -4,6 +4,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:uuid/uuid.dart';
 
+import '../utils/ui_utils.dart';
+
 class ClassService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -25,11 +27,11 @@ class ClassService {
         });
         return classId;
       } catch (e) {
-        Fluttertoast.showToast(msg: "Error creating class: $e");
+        UIUtils.showToast(msg: "Error creating class: $e");
         return null;
       }
     } else {
-      Fluttertoast.showToast(msg: "Error: User not found");
+      UIUtils.showToast(msg: "Error: User not found");
       return null;
     }
   }
@@ -51,9 +53,9 @@ class ClassService {
       });
 
       await _firestore.collection('classes').doc(classId).delete();
-      Fluttertoast.showToast(msg: "Class deleted successfully");
+      UIUtils.showToast(msg: "Class deleted successfully");
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error deleting class: $e");
+      UIUtils.showToast(msg: "Error deleting class: $e");
     }
   }
 
@@ -62,9 +64,9 @@ class ClassService {
       await _firestore.collection('classes').doc(classId).update({
         'name': newClassName,
       });
-      Fluttertoast.showToast(msg: "Class renamed successfully");
+      UIUtils.showToast(msg: "Class renamed successfully");
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error renaming class: $e");
+      UIUtils.showToast(msg: "Error renaming class: $e");
     }
   }
 
@@ -78,7 +80,7 @@ class ClassService {
       Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
       return classData['name'];
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error getting class name: $e");
+      UIUtils.showToast(msg: "Error getting class name: $e");
       return null;
     }
   }
@@ -102,7 +104,7 @@ class ClassService {
   Future<bool> joinClass(String classId) async {
     var user = _auth.currentUser;
     if (user == null) {
-      Fluttertoast.showToast(msg: "Error: User not found");
+      UIUtils.showToast(msg: "Error: User not found");
       return false;
     }
 
@@ -111,7 +113,7 @@ class ClassService {
           await _firestore.collection('classes').doc(classId).get();
 
       if (!classDoc.exists) {
-        Fluttertoast.showToast(msg: "Error: Class not found");
+        UIUtils.showToast(msg: "Error: Class not found");
         return false;
       }
 
@@ -119,7 +121,7 @@ class ClassService {
       List<dynamic> studentIds = classData['studentIds'] ?? [];
 
       if (studentIds.contains(user.uid)) {
-        Fluttertoast.showToast(msg: "You are already in this class");
+        UIUtils.showToast(msg: "You are already in this class");
         return false;
       }
 
@@ -127,10 +129,10 @@ class ClassService {
         'studentIds': FieldValue.arrayUnion([user.uid])
       });
 
-      Fluttertoast.showToast(msg: "Successfully joined the class");
+      UIUtils.showToast(msg: "Successfully joined the class");
       return true;
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error joining class: $e");
+      UIUtils.showToast(msg: "Error joining class: $e");
       return false;
     }
   }
@@ -138,7 +140,7 @@ class ClassService {
   Future<bool> removeStudentFromClass(String classId, String studentId) async {
     var user = _auth.currentUser;
     if (user == null) {
-      Fluttertoast.showToast(msg: "Error: User not found");
+      UIUtils.showToast(msg: "Error: User not found");
       return false;
     }
 
@@ -147,7 +149,7 @@ class ClassService {
           await _firestore.collection('classes').doc(classId).get();
 
       if (!classDoc.exists) {
-        Fluttertoast.showToast(msg: "Error: Class not found");
+        UIUtils.showToast(msg: "Error: Class not found");
         return false;
       }
 
@@ -155,15 +157,14 @@ class ClassService {
 
       // Check if the current user is the teacher of the class
       if (classData['teacherId'] != user.uid) {
-        Fluttertoast.showToast(
-            msg: "Error: Only the teacher can remove students");
+        UIUtils.showToast(msg: "Error: Only the teacher can remove students");
         return false;
       }
 
       List<dynamic> studentIds = classData['studentIds'] ?? [];
 
       if (!studentIds.contains(studentId)) {
-        Fluttertoast.showToast(msg: "Student is not in this class");
+        UIUtils.showToast(msg: "Student is not in this class");
         return false;
       }
 
@@ -171,11 +172,10 @@ class ClassService {
         'studentIds': FieldValue.arrayRemove([studentId])
       });
 
-      Fluttertoast.showToast(
-          msg: "Student removed from the class successfully");
+      UIUtils.showToast(msg: "Student removed from the class successfully");
       return true;
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error removing student from class: $e");
+      UIUtils.showToast(msg: "Error removing student from class: $e");
       return false;
     }
   }
@@ -183,7 +183,7 @@ class ClassService {
   Future<bool> leaveClass(String classId) async {
     var user = _auth.currentUser;
     if (user == null) {
-      Fluttertoast.showToast(msg: "Error: User not found");
+      UIUtils.showToast(msg: "Error: User not found");
       return false;
     }
 
@@ -192,7 +192,7 @@ class ClassService {
           await _firestore.collection('classes').doc(classId).get();
 
       if (!classDoc.exists) {
-        Fluttertoast.showToast(msg: "Error: Class not found");
+        UIUtils.showToast(msg: "Error: Class not found");
         return false;
       }
 
@@ -200,7 +200,7 @@ class ClassService {
       List<dynamic> studentIds = classData['studentIds'] ?? [];
 
       if (!studentIds.contains(user.uid)) {
-        Fluttertoast.showToast(msg: "You are not in this class");
+        UIUtils.showToast(msg: "You are not in this class");
         return false;
       }
 
@@ -208,10 +208,10 @@ class ClassService {
         'studentIds': FieldValue.arrayRemove([user.uid])
       });
 
-      Fluttertoast.showToast(msg: "Successfully left the class");
+      UIUtils.showToast(msg: "Successfully left the class");
       return true;
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error leaving class: $e");
+      UIUtils.showToast(msg: "Error leaving class: $e");
       return false;
     }
   }
@@ -265,7 +265,7 @@ class ClassService {
       List<dynamic> studentIds = classData['studentIds'] ?? [];
       return studentIds.length;
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error getting total students: $e");
+      UIUtils.showToast(msg: "Error getting total students: $e");
       return 0;
     }
   }
