@@ -72,7 +72,7 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
           return Column(
             children: [
               Expanded(
-                flex: 6,
+                flex: 8,
                 child: _buildInstructionCard(audioProvider, width),
               ),
               Expanded(
@@ -104,29 +104,35 @@ class _AudioSubmitPageState extends State<AudioSubmitPage> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  Text(
-                    pronunciationText!,
-                    style: const TextStyle(fontSize: 18),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      pronunciationText!,
+                      style: const TextStyle(fontSize: 18),
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  // const SizedBox(height: 16),
                   if (!isSubmitting)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16.0),
-                      child: _buildCircularButton(
-                        icon: audioProvider.isOnlinePlaying
-                            ? (audioProvider.isOnlinePaused
-                                ? Icons.play_arrow
-                                : Icons.pause)
-                            : Icons.play_arrow,
-                        onPressed: teacherAudioUrl != null
-                            ? () => audioProvider.isOnlinePlaying
-                                ? (audioProvider.isOnlinePaused
-                                    ? audioProvider
-                                        .playOnlineAudio(teacherAudioUrl!)
-                                    : audioProvider.pauseOnlinePlayback())
-                                : audioProvider
-                                    .playOnlineAudio(teacherAudioUrl!)
-                            : () {},
+                    Expanded(
+                      flex: 1,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: _buildCircularButton(
+                          icon: audioProvider.isOnlinePlaying
+                              ? (audioProvider.isOnlinePaused
+                                  ? Icons.play_arrow
+                                  : Icons.pause)
+                              : Icons.play_arrow,
+                          onPressed: teacherAudioUrl != null
+                              ? () => audioProvider.isOnlinePlaying
+                                  ? (audioProvider.isOnlinePaused
+                                      ? audioProvider
+                                          .playOnlineAudio(teacherAudioUrl!)
+                                      : audioProvider.pauseOnlinePlayback())
+                                  : audioProvider
+                                      .playOnlineAudio(teacherAudioUrl!)
+                              : () {},
+                        ),
                       ),
                     ),
                 ],
